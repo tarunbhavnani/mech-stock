@@ -6,7 +6,7 @@ Created on Sat Aug  1 19:29:19 2026
 """
 
 import os
-os.chdir(r"C:\Users\tarun\Desktop\mech-buy\test")
+os.chdir(r"C:\Users\tarun\Desktop\mech-buy")
 
 # =============================================================================
 # issues:
@@ -19,7 +19,7 @@ os.chdir(r"C:\Users\tarun\Desktop\mech-buy\test")
 # =============================================================================
 
 
-from code4 import *
+from code1 import *
 
 data = download_data(TICKERS,start_date)
 

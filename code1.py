@@ -7,7 +7,7 @@ Created on Sat Aug  1 19:15:40 2026
 import pandas as pd
 import yfinance as yf
 import numpy as np
-from config1 import *
+from config import *
 import copy
 
 
