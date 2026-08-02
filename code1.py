@@ -406,7 +406,8 @@ def execute_sells(portfolio,
 
         money += sell_price * qty
 
-        portfolio.pop(ticker)
+        temp=portfolio.pop(ticker)
+        #print("sell:", temp)
 
     owned = list(portfolio.keys())
 
@@ -477,6 +478,7 @@ def execute_buys(data,
             "sl":sl
 
         }
+        #print("Buy:",portfolio[ticker])
 
         money -= cost
 
