@@ -9,14 +9,6 @@ import yfinance as yf
 import numpy as np
 from config import *
 
-TICKERS = ['TATACONSUM.NS','BAJFINANCE.NS','WIPRO.NS','ASIANPAINT.NS','HINDALCO.NS',
-'CIPLA.NS','ETERNAL.NS','APOLLOHOSP.NS','DRREDDY.NS','SHRIRAMFIN.NS',
-'BHARTIARTL.NS','HDFCLIFE.NS','TRENT.NS','EICHERMOT.NS','NESTLEIND.NS',
-'INDIGO.NS','HDFCBANK.NS','RELIANCE.NS','SUNPHARMA.NS','BAJAJFINSV.NS',
-'MAXHEALTH.NS','M&M.NS','MARUTI.NS','TITAN.NS','BAJAJ-AUTO.NS','ADANIPORTS.NS',
-'SBILIFE.NS','SBIN.NS','ADANIENT.NS','POWERGRID.NS','JIOFIN.NS','HCLTECH.NS',
-'HINDUNILVR.NS','JSWSTEEL.NS','TCS.NS','COALINDIA.NS','INFY.NS','ICICIBANK.NS',
-'ITC.NS','AXISBANK.NS','ULTRACEMCO.NS','ONGC.NS','BEL.NS','NTPC.NS','KOTAKBANK.NS']
 
 
 
@@ -545,7 +537,7 @@ def run_backtest(data,first_day,capital,
 
     for day in range(first_day, max_day + 1):
         
-        print('.', end=" ", flush=True)
+        print(day, end=", ", flush=True)
         
         if len(owned)==0:
             
@@ -582,13 +574,13 @@ def run_backtest(data,first_day,capital,
         portfolio_value, equity = calculate_portfolio_value(portfolio, money)
             
         #get date
-        sample = get_row(next(iter(data.values())),day)
+        #sample = get_row(next(iter(data.values())),day)
             
         current=[i+'-'+str(int(portfolio[i]['price'])) for i in portfolio]
 
         history.append({
             "day": day,
-            "date": sample["date"],
+        #    "date": sample["date"],
             "cash": money,
             "portfolio": portfolio_value,
             "equity": equity,
@@ -665,7 +657,17 @@ def plot_equity_curve(history):
     plt.show()
     
     
+def get_date(history, data):
 
+    date_len=max([len(data[i]) for i in data])
+    
+    ticker=[i for i in data if len(data[i])==date_len][0]
+    
+    temp=data[ticker][['date', 'day']]
+    
+    history= history.merge(temp, on='day', how='left')
+    
+    return history
 # =============================================================================
 # 
 # =============================================================================
