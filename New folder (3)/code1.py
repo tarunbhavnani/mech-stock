@@ -7,8 +7,8 @@ Created on Sat Aug  1 19:15:40 2026
 import pandas as pd
 import yfinance as yf
 import numpy as np
-from config1 import *
-import copy
+from config import *
+
 
 
 
@@ -89,18 +89,6 @@ def flag_counter(df):
     df['flag_counter'] =flag_counter
     return df
 
-def get_day(data):
-    max_len=max([len(data[i]) for i in data])
-    temp_stock= [i for i in data if len(data[i])==max_len][0]
-    temp_data= copy.deepcopy(data[temp_stock])
-    temp_data["day"]= range(1, len(temp_data) + 1)
-    temp_data=temp_data[['date', 'day']]
-    
-    for i in data:
-        data[i]= data[i].merge(temp_data, on='date', how='left')
-    
-    return data
-
 def prepare_indicators(data):
     """
     Adds all indicators to every dataframe.
@@ -158,6 +146,8 @@ def prepare_indicators(data):
         
         df=flag_counter(df)
         
+        
+        df["day"] = range(1, len(df) + 1)
 
         data[ticker] = df
 
@@ -293,7 +283,7 @@ def get_buy_candidates(data,
 def build_initial_portfolio(data,
                             buy_list,
                             first_day,
-                            money,
+                            capital,
                             max_positions,
                             allocation_per_stock,
                             stoploss):
@@ -309,11 +299,9 @@ def build_initial_portfolio(data,
 
     portfolio = {}
 
-    #money = capital
+    money = capital
 
     buy_list = buy_list[:max_positions]
-    
-    allocation_per_stock=np.floor(money/max_positions)
 
     for ticker in buy_list:
 
@@ -432,8 +420,6 @@ def execute_buys(data,
     owned = list(portfolio.keys())
 
     available = max_positions - len(owned)
-    
-    allocation_per_stock=np.floor(money/available)
 
     if available <= 0:
         return portfolio, money, owned
@@ -538,7 +524,7 @@ def calculate_portfolio_value(portfolio,
 
     return portfolio_value, total_equity
 
-def run_backtest(data,first_day,money,
+def run_backtest(data,first_day,capital,
                  max_positions,allocation_per_stock,
                  stoploss, dist_low, dist_high):
 
@@ -557,7 +543,7 @@ def run_backtest(data,first_day,money,
             
             buy_list = get_buy_candidates(data, day, owned, dist_low, dist_high)
             
-            portfolio, money, owned = build_initial_portfolio(data, buy_list, day, money, max_positions, allocation_per_stock, stoploss)
+            portfolio, money, owned = build_initial_portfolio(data, buy_list, day, capital, max_positions, allocation_per_stock, stoploss)
         
         else:
 
@@ -581,16 +567,16 @@ def run_backtest(data,first_day,money,
                 portfolio, money, owned = execute_buys(data, portfolio, buy_list, day, money, max_positions, allocation_per_stock, stoploss)
     
             
-            #get marhet value
-            portfolio = mark_to_market(portfolio, data, day, stoploss)
-                
+        #get marhet value
+        portfolio = mark_to_market(portfolio, data, day, stoploss)
+            
         #get portfolio value
         portfolio_value, equity = calculate_portfolio_value(portfolio, money)
-                
-            #get date
-            #sample = get_row(next(iter(data.values())),day)
             
-        current=[i+'-'+str(int(portfolio[i]['price']))+'-'+str(int(portfolio[i]['sl'])) for i in portfolio]
+        #get date
+        #sample = get_row(next(iter(data.values())),day)
+            
+        current=[i+'-'+str(int(portfolio[i]['price'])) for i in portfolio]
 
         history.append({
             "day": day,
@@ -599,7 +585,7 @@ def run_backtest(data,first_day,money,
             "portfolio": portfolio_value,
             "equity": equity,
             "positions": len(portfolio),
-            "current":copy.deepcopy(current)
+            "current":current
             
         })
 
