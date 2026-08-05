@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Aug  2 19:47:59 2026
+Created on Wed Aug  5 17:24:29 2026
 
 @author: tarun
 """
@@ -8,6 +8,12 @@ Created on Sun Aug  2 19:47:59 2026
 # -*- coding: utf-8 -*-
 """
 Created on Sat Aug  1 19:15:40 2026
+
+updates- add all bought and all sold#done
+
+updates- reset portfolio every 50 days? #not good
+
+updates: what if we sell stocks at say 25%
 
 @author: tarun
 """
@@ -173,6 +179,10 @@ def prepare_indicators(data):
 
 
 
+
+
+
+
 def get_row(df, day):
 
     row = df.loc[df["day"] == day]
@@ -232,7 +242,7 @@ def build_initial_portfolio(data,
                             money,
                             max_positions,
                             allocation_per_stock,
-                            stoploss,trades):
+                            stoploss):
     """
     Build initial portfolio.
 
@@ -250,6 +260,8 @@ def build_initial_portfolio(data,
     buy_list = buy_list[:max_positions]
     
     allocation_per_stock=np.floor(money/max_positions)
+    
+    bought=[]
 
     for ticker in buy_list:
 
@@ -279,13 +291,14 @@ def build_initial_portfolio(data,
             "sl":sl
 
         }
-        trades.append(('buy',ticker, price, qty ))
 
         money -= cost
+        
+        bought.append((ticker, price, qty))
 
     owned = list(portfolio.keys())
 
-    return portfolio, money, owned, trades
+    return portfolio, money, owned,bought
 
 def get_sell_list(portfolio,
                   data,
@@ -310,8 +323,11 @@ def get_sell_list(portfolio,
         if row["Close"] < portfolio[ticker]['sl']:
 
             sell.append(ticker)
+            
+        # if row['Dist25']<-2.5:
+        #     sell.append(ticker)
 
-    return sell
+    return list(set(sell))
 
 
 
@@ -319,7 +335,7 @@ def execute_sells(portfolio,
                   sell_list,
                   data,
                   day,
-                  money, trades):
+                  money):
     """
     Execute all sells.
 
@@ -329,7 +345,7 @@ def execute_sells(portfolio,
     money
     owned
     """
-
+    sold=[]
     for ticker in sell_list:
 
         row = get_row(data[ticker], day)
@@ -342,22 +358,53 @@ def execute_sells(portfolio,
         qty = portfolio[ticker]["qty"]
 
         money += sell_price * qty
-
-        portfolio.pop(ticker)
         
-        trades.append(('sell',ticker, sell_price, qty ))
+        sold.append((ticker, sell_price, qty))
+
+        temp=portfolio.pop(ticker)
+        #print("sell:", temp)
+        
 
     owned = list(portfolio.keys())
 
-    return portfolio, money, owned, trades
 
-def execute_buys(data,
-                 portfolio,
-                 buy_list,
-                 day,
-                 money,
-                 max_positions,
-                 allocation_per_stock, stoploss, trades):
+    return portfolio, money, owned, sold
+
+
+def sell_all(portfolio,data,day,money):
+    """
+    Execute all sells.
+
+    Returns
+    -------
+    portfolio
+    money
+    owned
+    """
+    sold=[]
+    
+    for ticker in portfolio:
+
+        row = get_row(data[ticker], day)
+
+        if row is None:
+            continue
+
+        sell_price = row["Close"]
+
+        qty = portfolio[ticker]["qty"]
+
+        money += sell_price * qty
+        
+        sold.append((ticker, sell_price, qty))
+
+        #temp=portfolio.pop(ticker)
+        #print("sell:", temp)
+        
+    return  money, sold
+
+
+def execute_buys(data,portfolio,buy_list,day,money,max_positions,allocation_per_stock, stoploss):
     """
     Buy new stocks.
 
@@ -378,6 +425,7 @@ def execute_buys(data,
         return portfolio, money, owned
 
     buy_list = buy_list[:available]
+    bought=[]
 
     for ticker in buy_list:
 
@@ -416,13 +464,18 @@ def execute_buys(data,
             "sl":sl
 
         }
-        trades.append(('buy',ticker, price, qty ))
+        #print("Buy:",portfolio[ticker])
 
         money -= cost
+        
+        bought.append((ticker, price, qty))
 
     owned = list(portfolio.keys())
 
-    return portfolio, money, owned, trades
+    return portfolio, money, owned, bought
+
+
+
 
 
 
@@ -450,7 +503,7 @@ def mark_to_market(portfolio,
             portfolio[ticker]["qty"]
         )
         
-        new_sl=np.ceil(row["Close"]*(100-stoploss)/100)
+        new_sl=np.floor(row["High"]*(100-stoploss)/100)
         
         if new_sl>portfolio[ticker]["sl"]:
             portfolio[ticker]["sl"]=new_sl
@@ -481,13 +534,12 @@ def calculate_portfolio_value(portfolio,
 def run_backtest(data,first_day,money,
                  max_positions,allocation_per_stock,
                  stoploss, dist_low, dist_high):
-    
-    trades=[]
-    
 
     max_day = max(df["day"].max() for df in data.values())
     
     owned=[]
+    all_bought={}
+    all_sold={}
 
 
     history = []
@@ -496,11 +548,15 @@ def run_backtest(data,first_day,money,
         
         print(day, end=", ", flush=True)
         
+        
         if len(owned)==0:
             
             buy_list = get_buy_candidates(data, day, owned, dist_low, dist_high)
             
-            portfolio, money, owned,trades = build_initial_portfolio(data, buy_list, day, money, max_positions, allocation_per_stock, stoploss,trades)
+            portfolio, money, owned, bought = build_initial_portfolio(data, buy_list, day, money, max_positions, allocation_per_stock, stoploss)
+            all_bought[day]=bought
+        
+            
         
         else:
 
@@ -512,7 +568,9 @@ def run_backtest(data,first_day,money,
             sell_list = get_sell_list(portfolio, data, day)
             
             #sell
-            portfolio, money, owned ,trades= execute_sells(portfolio, sell_list, data, day, money,trades)
+            portfolio, money, owned, sold = execute_sells(portfolio, sell_list, data, day, money)
+            all_sold[day]=sold
+            
             
             #buy new
             if len(owned) < max_positions:
@@ -521,7 +579,8 @@ def run_backtest(data,first_day,money,
                 buy_list = get_buy_candidates(data, day, owned, dist_low, dist_high)
                 
                 #buy
-                portfolio, money, owned,trades = execute_buys(data, portfolio, buy_list, day, money, max_positions, allocation_per_stock, stoploss,trades)
+                portfolio, money, owned, bought = execute_buys(data, portfolio, buy_list, day, money, max_positions, allocation_per_stock, stoploss)
+                all_bought[day]=bought
     
             
             #get marhet value
@@ -548,7 +607,7 @@ def run_backtest(data,first_day,money,
 
     history = pd.DataFrame(history)
 
-    return history,trades
+    return history, all_bought, all_sold
 
 def performance_metrics(history,
                         initial_capital):
@@ -629,3 +688,18 @@ def get_date(history, data):
 # 
 # =============================================================================
 
+def get_transactions(all_bought, all_sold):
+    final=[]
+    for i in all_bought:
+        for j in all_bought[i]:
+            final.append((i,'buy', j[0],j[1],j[2]))
+    
+    
+    for i in all_sold:
+        for j in all_sold[i]:
+            final.append((i,'sell', j[0],j[1],j[2]))
+    
+    
+    final=pd.DataFrame(final)
+    final.columns=['day','action', 'ticker', 'price', 'qty']
+    return final

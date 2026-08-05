@@ -7,22 +7,15 @@ Created on Sat Aug  1 19:15:40 2026
 import pandas as pd
 import yfinance as yf
 import numpy as np
-
-TICKERS = ['TATACONSUM.NS','BAJFINANCE.NS','WIPRO.NS','ASIANPAINT.NS','HINDALCO.NS',
-'CIPLA.NS','ETERNAL.NS','APOLLOHOSP.NS','DRREDDY.NS','SHRIRAMFIN.NS',
-'BHARTIARTL.NS','HDFCLIFE.NS','TRENT.NS','EICHERMOT.NS','NESTLEIND.NS',
-'INDIGO.NS','HDFCBANK.NS','RELIANCE.NS','SUNPHARMA.NS','BAJAJFINSV.NS',
-'MAXHEALTH.NS','M&M.NS','MARUTI.NS','TITAN.NS','BAJAJ-AUTO.NS','ADANIPORTS.NS',
-'SBILIFE.NS','SBIN.NS','ADANIENT.NS','POWERGRID.NS','JIOFIN.NS','HCLTECH.NS',
-'HINDUNILVR.NS','JSWSTEEL.NS','TCS.NS','COALINDIA.NS','INFY.NS','ICICIBANK.NS',
-'ITC.NS','AXISBANK.NS','ULTRACEMCO.NS','ONGC.NS','BEL.NS','NTPC.NS','KOTAKBANK.NS']
+from config import *
+import copy
 
 
 
 
 
 def download_data(tickers,
-                  start_date="2015-01-01",
+                  start_date,
                   auto_adjust=True):
     """
     Download historical OHLCV data for all tickers.
@@ -96,6 +89,18 @@ def flag_counter(df):
     df['flag_counter'] =flag_counter
     return df
 
+def get_day(data):
+    max_len=max([len(data[i]) for i in data])
+    temp_stock= [i for i in data if len(data[i])==max_len][0]
+    temp_data= copy.deepcopy(data[temp_stock])
+    temp_data["day"]= range(1, len(temp_data) + 1)
+    temp_data=temp_data[['date', 'day']]
+    
+    for i in data:
+        data[i]= data[i].merge(temp_data, on='date', how='left')
+    
+    return data
+
 def prepare_indicators(data):
     """
     Adds all indicators to every dataframe.
@@ -153,8 +158,6 @@ def prepare_indicators(data):
         
         df=flag_counter(df)
         
-        
-        df["day"] = range(1, len(df) + 1)
 
         data[ticker] = df
 
@@ -247,8 +250,8 @@ def get_row(df, day):
 def get_buy_candidates(data,
                        day,
                        owned,
-                       dist_low=2,
-                       dist_high=5):
+                       dist_low,
+                       dist_high):
     """
     Find stocks eligible for buying.
 
@@ -290,10 +293,10 @@ def get_buy_candidates(data,
 def build_initial_portfolio(data,
                             buy_list,
                             first_day,
-                            capital=1000000,
-                            max_positions=5,
-                            allocation_per_stock=200000,
-                            stoploss=5):
+                            money,
+                            max_positions,
+                            allocation_per_stock,
+                            stoploss):
     """
     Build initial portfolio.
 
@@ -306,9 +309,11 @@ def build_initial_portfolio(data,
 
     portfolio = {}
 
-    money = capital
+    #money = capital
 
     buy_list = buy_list[:max_positions]
+    
+    allocation_per_stock=np.floor(money/max_positions)
 
     for ticker in buy_list:
 
@@ -368,8 +373,11 @@ def get_sell_list(portfolio,
         if row["Close"] < portfolio[ticker]['sl']:
 
             sell.append(ticker)
+            
+        # if row['Dist25']<-2.5:
+        #     sell.append(ticker)
 
-    return sell
+    return list(set(sell))
 
 
 
@@ -401,7 +409,8 @@ def execute_sells(portfolio,
 
         money += sell_price * qty
 
-        portfolio.pop(ticker)
+        temp=portfolio.pop(ticker)
+        #print("sell:", temp)
 
     owned = list(portfolio.keys())
 
@@ -412,8 +421,8 @@ def execute_buys(data,
                  buy_list,
                  day,
                  money,
-                 max_positions=5,
-                 allocation_per_stock=200000, stoploss=5):
+                 max_positions,
+                 allocation_per_stock, stoploss):
     """
     Buy new stocks.
 
@@ -427,6 +436,8 @@ def execute_buys(data,
     owned = list(portfolio.keys())
 
     available = max_positions - len(owned)
+    
+    allocation_per_stock=np.floor(money/available)
 
     if available <= 0:
         return portfolio, money, owned
@@ -470,6 +481,7 @@ def execute_buys(data,
             "sl":sl
 
         }
+        #print("Buy:",portfolio[ticker])
 
         money -= cost
 
@@ -481,7 +493,7 @@ def execute_buys(data,
 
 def mark_to_market(portfolio,
                    data,
-                   day,stoploss=5):
+                   day,stoploss):
     """
     Update portfolio prices to current day.
 
@@ -498,12 +510,13 @@ def mark_to_market(portfolio,
             continue
 
         portfolio[ticker]["price"] = row["Close"]
+        
         portfolio[ticker]["value"] = (
             row["Close"] *
             portfolio[ticker]["qty"]
         )
         
-        new_sl=np.ceil(row["Close"]*(100-stoploss)/100)
+        new_sl=np.floor(row["High"]*(100-stoploss)/100)
         
         if new_sl>portfolio[ticker]["sl"]:
             portfolio[ticker]["sl"]=new_sl
@@ -531,107 +544,68 @@ def calculate_portfolio_value(portfolio,
 
     return portfolio_value, total_equity
 
-def run_backtest(data,
-                 first_day,
-                 capital=1000000,
-                 max_positions=5,
-                 allocation_per_stock=200000,
-                 stoploss=5):
+def run_backtest(data,first_day,money,
+                 max_positions,allocation_per_stock,
+                 stoploss, dist_low, dist_high):
 
-    # max_day = min(
-    #     df["day"].max()
-    #     for df in data.values()
-    # )
-    max_day = max(
-    df["day"].max()
-    for df in data.values()
-        )
+    max_day = max(df["day"].max() for df in data.values())
+    
+    owned=[]
 
-    buy_list = get_buy_candidates(
-        data,
-        first_day,
-        owned=[]
-    )
-
-    portfolio, money, owned = build_initial_portfolio(
-        data,
-        buy_list,
-        first_day,
-        capital=capital,
-        max_positions=max_positions,
-        allocation_per_stock=allocation_per_stock
-    )
 
     history = []
 
-    for day in range(first_day,
-                     max_day + 1
-                     ):
+    for day in range(first_day, max_day + 1):
         
-        portfolio = mark_to_market(
-            portfolio,
-            data,
-            day, stoploss
-        )
-
-        sell_list = get_sell_list(
-            portfolio,
-            data,
-            day
-        )
-
-        portfolio, money, owned = execute_sells(
-            portfolio,
-            sell_list,
-            data,
-            day,
-            money
-        )
-
-        if len(sell_list) > 0:
+        print(day, end=", ", flush=True)
+        
+        if len(owned)==0:
             
-            #update sells
-            buy_list = get_buy_candidates(
-                data,
-                day,
-                owned
-            )
+            buy_list = get_buy_candidates(data, day, owned, dist_low, dist_high)
+            
+            portfolio, money, owned = build_initial_portfolio(data, buy_list, day, money, max_positions, allocation_per_stock, stoploss)
+        
+        else:
 
-            portfolio, money, owned = execute_buys(
-                data,
-                portfolio,
-                buy_list,
-                day,
-                money,
-                max_positions=max_positions,
-                allocation_per_stock=allocation_per_stock
-            )
-
-        portfolio = mark_to_market(
-            portfolio,
-            data,
-            day, stoploss
-        )
-
-        portfolio_value, equity = calculate_portfolio_value(
-            portfolio,
-            money
-        )
-
-        sample = get_row(
-            next(iter(data.values())),
-            day
-        )
-        current=[i+'-'+str(int(portfolio[i]['price'])) for i in portfolio]
+            
+            #get marhet value
+            portfolio = mark_to_market(portfolio, data, day, stoploss)
+            
+            #get sell candidates
+            sell_list = get_sell_list(portfolio, data, day)
+            
+            #sell
+            portfolio, money, owned = execute_sells(portfolio, sell_list, data, day, money)
+            
+            #buy new
+            if len(owned) < max_positions:
+                
+                #get buy list
+                buy_list = get_buy_candidates(data, day, owned, dist_low, dist_high)
+                
+                #buy
+                portfolio, money, owned = execute_buys(data, portfolio, buy_list, day, money, max_positions, allocation_per_stock, stoploss)
+    
+            
+            #get marhet value
+            portfolio = mark_to_market(portfolio, data, day, stoploss)
+                
+        #get portfolio value
+        portfolio_value, equity = calculate_portfolio_value(portfolio, money)
+                
+            #get date
+            #sample = get_row(next(iter(data.values())),day)
+            
+        current=[i+'-'+str(int(portfolio[i]['price']))+'-'+str(int(portfolio[i]['sl'])) for i in portfolio]
 
         history.append({
             "day": day,
-            "date": sample["date"],
+        #    "date": sample["date"],
             "cash": money,
             "portfolio": portfolio_value,
             "equity": equity,
             "positions": len(portfolio),
-            "current":current
+            "current":copy.deepcopy(current)
             
         })
 
@@ -639,9 +613,8 @@ def run_backtest(data,
 
     return history
 
-
 def performance_metrics(history,
-                        initial_capital=1000000):
+                        initial_capital):
 
     history = history.copy()
 
@@ -704,71 +677,18 @@ def plot_equity_curve(history):
     plt.show()
     
     
+def get_date(history, data):
 
+    date_len=max([len(data[i]) for i in data])
+    
+    ticker=[i for i in data if len(data[i])==date_len][0]
+    
+    temp=data[ticker][['date', 'day']]
+    
+    history= history.merge(temp, on='day', how='left')
+    
+    return history
 # =============================================================================
 # 
 # =============================================================================
-
-# data = download_data(TICKERS)
-
-# data = prepare_indicators(data)
-
-# data = prepare_rebalance_data(data)
-
-# buy_list = get_buy_candidates(
-#     data,
-#     first_day,
-#     owned=[]
-# )
-
-# portfolio, money, owned = build_initial_portfolio(
-#     data,
-#     buy_list,
-#     first_day
-# )
-
-# for day in range(first_day + 10,
-#                  max_day + 1,
-#                  10):
-
-#     # Find sells
-
-#     sell_list = get_sell_list(
-#         portfolio,
-#         data,
-#         day
-#     )
-
-#     # Execute sells
-
-#     portfolio, money, owned = execute_sells(
-#         portfolio,
-#         sell_list,
-#         data,
-#         day,
-#         money
-#     )
-
-#     # Only look for buys if something was sold
-#     # (same logic as your original code)
-
-#     if sell_list:
-
-#         buy_list = get_buy_candidates(
-#             data,
-#             day,
-#             owned
-#         )
-
-#         portfolio, money, owned = execute_buys(
-#             data,
-#             portfolio,
-#             buy_list,
-#             day,
-#             money
-#         )
-#         value= sum([portfolio[i]['price']*portfolio[i]['qty'] for i in portfolio])
-        
-#         print(day,"---", value+money)
-
 

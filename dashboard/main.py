@@ -43,7 +43,7 @@ with open("data\portfolio.json", "r") as f:
 # load PM class and update prices
 # =============================================================================
 
-pm = PortfolioManager(data, portfolio, stoploss)
+pm = PortfolioManager(data, portfolio, stoploss,pf_start_date)
 
 updated_portfolio=pm.update_current_portfolio()
 

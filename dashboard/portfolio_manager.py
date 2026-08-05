@@ -23,14 +23,57 @@ import json
 
 class PortfolioManager:
 
-    def __init__(self, data, portfolio, stoploss):
+    def __init__(self, data, portfolio, stoploss, pf_start_date):
         self.data = data
-        
+        self.pf_start_date=pf_start_date
         self.stoploss = stoploss
         self.portfolio = portfolio
+        self.hp = self.get_highest_prices()
 
    
+    
+    def get_highest_prices(self):
+        
+        hp={}
+        tickers= [i for i in self.data]
+        for tick in tickers:
+            temp=self.data[tick][self.data[tick]['date']>self.pf_start_date]
+            hp[tick]=max(round(temp['High']))
+            
+        
+        return hp
+       
+    
+    # # =========================================================================
+    # # Update current portfolio
+    # # =========================================================================
+    # def update_current_portfolio(self):
+    #     """
+    #     Update current portfolio with latest prices.
+    #     """
 
+    #     for ticker in self.portfolio:
+
+    #         row = self.data[ticker].iloc[-1]
+
+    #         if row is None:
+    #             continue
+
+    #         highest_price = np.floor(row["High"])
+            
+    #         price = np.floor(row["Close"])
+    #         value= price*self.portfolio[ticker]["qty"]
+            
+
+    #         self.portfolio[ticker]["price"] = price
+    #         self.portfolio[ticker]["value"] = value
+
+    #         if highest_price > self.portfolio[ticker]["highest_price"]:
+    #             self.portfolio[ticker]["highest_price"] = price
+            
+    #         self.portfolio[ticker]["sl"] = np.ceil(self.portfolio[ticker]["highest_price"] * (100 - self.stoploss) / 100)
+
+    #     return self.portfolio
     # =========================================================================
     # Update current portfolio
     # =========================================================================
@@ -46,7 +89,9 @@ class PortfolioManager:
             if row is None:
                 continue
 
-            highest_price = np.floor(row["High"])
+            highest_prices=self.hp
+            self.portfolio[ticker]["highest_price"] = highest_prices[ticker]
+             
             
             price = np.floor(row["Close"])
             value= price*self.portfolio[ticker]["qty"]
@@ -55,8 +100,6 @@ class PortfolioManager:
             self.portfolio[ticker]["price"] = price
             self.portfolio[ticker]["value"] = value
 
-            if highest_price > self.portfolio[ticker]["highest_price"]:
-                self.portfolio[ticker]["highest_price"] = price
             
             self.portfolio[ticker]["sl"] = np.ceil(self.portfolio[ticker]["highest_price"] * (100 - self.stoploss) / 100)
 

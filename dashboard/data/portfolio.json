@@ -1,0 +1,170 @@
+{
+    "ARIS.NS": {
+        "price": 130.0,
+        "highest_price": 135.0,
+        "qty": 1000,
+        "value": 130000.0,
+        "sl": 125.0
+    },
+    "BLACKBUCK.NS": {
+        "price": 546.0,
+        "highest_price": 575.0,
+        "qty": 200,
+        "value": 109200.0,
+        "sl": 532.0
+    },
+    "COHANCE.NS": {
+        "price": 424.0,
+        "highest_price": 437.0,
+        "qty": 3300,
+        "value": 1399200.0,
+        "sl": 405.0
+    },
+    "DABUR.NS": {
+        "price": 409.0,
+        "highest_price": 438.0,
+        "qty": 1000,
+        "value": 409000.0,
+        "sl": 406.0
+    },
+    "DELTACORP.NS": {
+        "price": 63.0,
+        "highest_price": 65.0,
+        "qty": 10000,
+        "value": 630000.0,
+        "sl": 61.0
+    },
+    "EFCIL.NS": {
+        "price": 191.0,
+        "highest_price": 203.0,
+        "qty": 250,
+        "value": 47750.0,
+        "sl": 188.0
+    },
+    "GOCOLORS.NS": {
+        "price": 320.0,
+        "highest_price": 355.0,
+        "qty": 500,
+        "value": 160000.0,
+        "sl": 329.0
+    },
+    "GULPOLY.NS": {
+        "price": 199.0,
+        "highest_price": 207.0,
+        "qty": 2000,
+        "value": 398000.0,
+        "sl": 192.0
+    },
+    "IOC.NS": {
+        "price": 141.0,
+        "highest_price": 145.0,
+        "qty": 3000,
+        "value": 423000.0,
+        "sl": 135.0
+    },
+    "INDOFARM.NS": {
+        "price": 157.0,
+        "highest_price": 164.0,
+        "qty": 2000,
+        "value": 314000.0,
+        "sl": 152.0
+    },
+    "JIOFIN.NS": {
+        "price": 265.0,
+        "highest_price": 267.0,
+        "qty": 7000,
+        "value": 1855000.0,
+        "sl": 247.0
+    },
+    "KPEL.NS": {
+        "price": 322.0,
+        "highest_price": 324.0,
+        "qty": 500,
+        "value": 161000.0,
+        "sl": 300.0
+    },
+    "NETWORK18.NS": {
+        "price": 30.0,
+        "highest_price": 30.0,
+        "qty": 29000,
+        "value": 870000.0,
+        "sl": 28.0
+    },
+    "PARADEEP.NS": {
+        "price": 144.0,
+        "highest_price": 160.0,
+        "qty": 1000,
+        "value": 144000.0,
+        "sl": 148.0
+    },
+    "RELIANCE.NS": {
+        "price": 1290.0,
+        "highest_price": 1319.0,
+        "qty": 400,
+        "value": 516000.0,
+        "sl": 1221.0
+    },
+    "SAGILITY.NS": {
+        "price": 44.0,
+        "highest_price": 46.0,
+        "qty": 10000,
+        "value": 440000.0,
+        "sl": 43.0
+    },
+    "MOTHERSON.NS": {
+        "price": 151.0,
+        "highest_price": 156.0,
+        "qty": 4725,
+        "value": 713475.0,
+        "sl": 145.0
+    },
+    "SUVEN.NS": {
+        "price": 309.0,
+        "highest_price": 320.0,
+        "qty": 1000,
+        "value": 309000.0,
+        "sl": 296.0
+    },
+    "SWANCORP.NS": {
+        "price": 313.0,
+        "highest_price": 317.0,
+        "qty": 2750,
+        "value": 860750.0,
+        "sl": 294.0
+    },
+    "TIMETECHNO.NS": {
+        "price": 208.0,
+        "highest_price": 217.0,
+        "qty": 5000,
+        "value": 1040000.0,
+        "sl": 201.0
+    },
+    "VEDL.NS": {
+        "price": 269.0,
+        "highest_price": 272.0,
+        "qty": 1250,
+        "value": 336250.0,
+        "sl": 252.0
+    },
+    "VIKRAN.NS": {
+        "price": 72.0,
+        "highest_price": 74.0,
+        "qty": 2500,
+        "value": 180000.0,
+        "sl": 69.0
+    },
+    "ZTECH.NS": {
+        "price": 525.0,
+        "highest_price": 544.0,
+        "qty": 300,
+        "value": 157500.0,
+        "sl": 504.0
+    },
+    "ZAGGLE.NS": {
+        "price": 203.0,
+        "highest_price": 211.0,
+        "qty": 250,
+        "value": 50750.0,
+        "sl": 196.0
+    }
+}

@@ -16,6 +16,19 @@ os.chdir(r"C:\Users\tarun\Desktop\mech-buy")
     #3) update buy list from above 2-5 25 dms to also cover in uptrend:i think ots done
     #4) if stock market falling buying can stop!: not done
     #5) price for ranibow did not update and was 1525 for all of them, inflationg the value
+
+
+
+# more backtest
+
+#buy list is ascending order of dist25, try otherway around
+
+##sell candidate at day high minus sl works better
+
+#check
+#check_nuvama.csv
+#why is nuvama not getting sold at sl
+
 # =============================================================================
 
 
@@ -41,6 +54,13 @@ history=get_date(history, data)
 stats = performance_metrics(history,initial_capital=1000000)
 
 plot_equity_curve(history)
+
+
+
+# =============================================================================
+# current stocks
+# =============================================================================
+history.current.iloc[-1]
 
 
 # =============================================================================
