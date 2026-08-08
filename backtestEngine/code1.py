@@ -15,6 +15,8 @@ updates- reset portfolio every 50 days? #not good
 
 updates: what if we sell stocks at say 25%
 
+updates: alert set at portfolio level fall of 5 pc: results worse. at 7.5 pc no change noticed, it neven fell.#done
+
 @author: tarun
 """
 import pandas as pd
@@ -22,6 +24,7 @@ import yfinance as yf
 import numpy as np
 from config import *
 import copy
+import random
 
 
 
@@ -245,9 +248,13 @@ def get_buy_candidates(data,
     buy_list = dict(
         sorted(
             buy_list.items(),
-            key=lambda x: x[1]
+            key=lambda x: x[1],reverse=True
         )
     )
+    # buy_list = dict(
+    # random.sample(
+    #     list(buy_list.items()),
+    #     len(buy_list)))
 
     return list(buy_list.keys())
 
