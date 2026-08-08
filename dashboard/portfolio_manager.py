@@ -12,15 +12,10 @@ Created on Mon Aug  3 21:19:27 2026
 @author: tarun
 
 
-#update highest price in such a way that it shows the highest price since purchase. if run eveyday it will get updated. if not run in some days it might miss the day highs reached
-since we are just looking at the current day high
-
 make a similar one for hour level so that can be used on fno for fno calls!
 
+add function to check portfolio drawdown, sell all at 5 pc? 
 
-
-#update required: sell does not have quantity
-buy updates the stock entry does not append the adds
 """
 
 import numpy as np
@@ -148,24 +143,37 @@ class PortfolioManager:
     # =========================================================================
     # Sell stock
     # =========================================================================
-    def sell_stock(self, ticker):
+    def sell_stock(self, ticker, qty):
+        
+        temp= self.portfolio[ticker]
+        temp['qty']=temp['qty']-qty
+        temp['value']= temp['price']*temp['qty']
+        
+        self.portfolio[ticker]=temp
 
-        sold = self.portfolio.pop(ticker)
+        #sold = self.portfolio.pop(ticker)
 
-        return sold
+        #return sold
 
     # =========================================================================
     # Buy stock
     # =========================================================================
     def buy_stock(self, ticker, price, qty):
-
-        bought = {
-            "price": price,
-            "highest_price": price,
-            "qty": qty,
-            "value": price * qty,
-            "sl": np.ceil(price * (100 - self.stoploss) / 100),
-        }
+        
+        if ticker in self.portfolio:
+            bought= self.portfolio[ticker]
+            bought['qty']=bought['qty']+qty
+            bought['value']= bought['value']+ price*qty
+            
+            
+        else:    
+            bought = {
+                "price": price,
+                "highest_price": price,
+                "qty": qty,
+                "value": price * qty,
+                "sl": np.ceil(price * (100 - self.stoploss) / 100),
+            }
 
         self.portfolio[ticker] = bought
 
@@ -179,6 +187,30 @@ class PortfolioManager:
         with open("data\portfolio.json", "w") as f:
             json.dump(self.portfolio, f, indent=4, default=lambda x: x.item() if isinstance(x, np.generic) else x)
             
+    # # =============================================================================
+    # # get sell list    
+    # # =============================================================================
+    # def get_sell_list(self):
+    #     """
+    #     Find all stocks that should be sold.
+
+    #     Returns
+    #     -------
+    #     list
+    #     """
+
+    #     sell = []
+
+    #     for ticker in self.portfolio:
+    #         row= self.portfolio[ticker]
+
+            
+    #         if row["price"] <= row['sl']:
+
+    #             sell.append(ticker)
+
+    #     return sell
+    
     # =============================================================================
     # get sell list    
     # =============================================================================
@@ -194,15 +226,15 @@ class PortfolioManager:
         sell = []
 
         for ticker in self.portfolio:
-            row= self.portfolio[ticker]
-
             
-            if row["price"] <= row['sl']:
+            row = self.data[ticker].iloc[-1]
+
+            if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>9:
+            #if row["price"] <= row['sl']:
 
                 sell.append(ticker)
 
         return sell
-    
     
     
     

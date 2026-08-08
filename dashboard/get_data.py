@@ -90,6 +90,20 @@ def flag_counter(df):
     df['flag_counter'] =flag_counter
     return df
 
+def anti_flag_counter(df):
+    counter=0
+    anti_flag_counter=[]
+    for i in df['flag']:
+        if i:
+            counter=0
+            anti_flag_counter.append(counter)
+        else:
+            counter+=1
+            anti_flag_counter.append(counter)
+    df['anti_flag_counter'] =anti_flag_counter
+    return df
+
+
 def get_day(data):
     max_len=max([len(data[i]) for i in data])
     temp_stock= [i for i in data if len(data[i])==max_len][0]
@@ -158,6 +172,7 @@ def prepare_indicators(data):
         df["flag"] = df["Close"] > df["SMA25"]
         
         df=flag_counter(df)
+        df=anti_flag_counter(df)
         
 
         data[ticker] = df
