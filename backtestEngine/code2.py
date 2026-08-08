@@ -65,6 +65,7 @@ plot_equity_curve(history)
 
 final3=get_transactions(all_bought, all_sold)
 final3=final3.sort_values(by=['ticker','day'])
+kl=final3.groupby(['day', 'action']).apply(lambda x: list(x['ticker'])).reset_index()
 
 
 # =============================================================================
