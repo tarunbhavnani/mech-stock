@@ -13,7 +13,7 @@ Created on Sat Aug  1 19:29:19 2026
 """
 
 import os
-os.chdir(r"C:\Users\tarun\Desktop\mech-buy")
+os.chdir(r"C:\Users\tarun\Desktop\mech-buy\backtestEngine")
 
 # =============================================================================
 # issues:
@@ -41,7 +41,8 @@ os.chdir(r"C:\Users\tarun\Desktop\mech-buy")
 
 from code1 import *
 
-data = download_data(TICKERS,start_date)
+
+data = download_data(TICKERS,start_date='2020-01-01', end_date= '2026-08-05')
 
 data = prepare_indicators(data)
 
@@ -62,7 +63,8 @@ stats = performance_metrics(history,initial_capital=1000000)
 
 plot_equity_curve(history)
 
-final1=get_transactions(all_bought, all_sold)
+final3=get_transactions(all_bought, all_sold)
+final3=final3.sort_values(by=['ticker','day'])
 
 
 # =============================================================================

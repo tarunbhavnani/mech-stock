@@ -28,7 +28,7 @@ import copy
 
 
 def download_data(tickers,
-                  start_date,
+                  start_date,end_date=None,
                   auto_adjust=True):
     """
     Download historical OHLCV data for all tickers.
@@ -53,6 +53,7 @@ def download_data(tickers,
                 ticker,
                 start=start_date,
                 progress=False,
+                end=end_date,
                 auto_adjust=auto_adjust
             )
 
@@ -101,6 +102,20 @@ def flag_counter(df):
             flag_counter.append(counter)
     df['flag_counter'] =flag_counter
     return df
+
+def anti_flag_counter(df):
+    counter=0
+    anti_flag_counter=[]
+    for i in df['flag']:
+        if i:
+            counter=0
+            anti_flag_counter.append(counter)
+        else:
+            counter+=1
+            anti_flag_counter.append(counter)
+    df['anti_flag_counter'] =anti_flag_counter
+    return df
+
 
 def get_day(data):
     max_len=max([len(data[i]) for i in data])
@@ -170,6 +185,7 @@ def prepare_indicators(data):
         df["flag"] = df["Close"] > df["SMA25"]
         
         df=flag_counter(df)
+        df=anti_flag_counter(df)
         
 
         data[ticker] = df
@@ -194,10 +210,10 @@ def get_row(df, day):
 
 
 def get_buy_candidates(data,
-                       day,
-                       owned,
-                       dist_low,
-                       dist_high):
+                        day,
+                        owned,
+                        dist_low,
+                        dist_high):
     """
     Find stocks eligible for buying.
 
@@ -234,6 +250,8 @@ def get_buy_candidates(data,
     )
 
     return list(buy_list.keys())
+
+
 
 
 def build_initial_portfolio(data,
@@ -320,7 +338,9 @@ def get_sell_list(portfolio,
         if row is None:
             continue
 
-        if row["Close"] < portfolio[ticker]['sl']:
+        #if row["Close"] < portfolio[ticker]['sl']:
+        if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>9:
+        
 
             sell.append(ticker)
             
@@ -491,7 +511,7 @@ def mark_to_market(portfolio,
     """
 
     for ticker in portfolio:
-
+        
         row = get_row(data[ticker], day)
 
         if row is None:

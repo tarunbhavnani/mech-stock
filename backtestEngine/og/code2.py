@@ -6,7 +6,7 @@ Created on Sat Aug  1 19:29:19 2026
 """
 
 import os
-os.chdir(r"C:\Users\tarun\Desktop\mech-buy")
+os.chdir(r"C:\Users\tarun\Desktop\mech-buy\backtestEngine\og")
 
 # =============================================================================
 # issues:

@@ -6,12 +6,13 @@ Created on Sun Aug  2 12:28:08 2026
 """
 
 start_date="2026-01-01"
+pf_start_date="2026-06-15"
 dist_low=2
 dist_high=5
 money=1000000
 max_positions=7
 allocation_per_stock=200000
-stoploss=7.5
+stoploss=20
 initial_capital=1000000
 first_day=70
 

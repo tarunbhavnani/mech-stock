@@ -16,6 +16,11 @@ Created on Mon Aug  3 21:19:27 2026
 since we are just looking at the current day high
 
 make a similar one for hour level so that can be used on fno for fno calls!
+
+
+
+#update required: sell does not have quantity
+buy updates the stock entry does not append the adds
 """
 
 import numpy as np
