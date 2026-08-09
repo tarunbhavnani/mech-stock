@@ -66,6 +66,24 @@ plot_equity_curve(history)
 final3=get_transactions(all_bought, all_sold)
 final3=final3.sort_values(by=['ticker','day'])
 kl=final3.groupby(['day', 'action']).apply(lambda x: list(x['ticker'])).reset_index()
+kl.columns=['day', 'action', 'ticker']
+
+kl['pf']=0
+pf=kl.ticker.iloc[0]
+kl['pf'].iloc[0]=pf
+
+for i in range(1,len(kl)):
+    
+    if kl.action.iloc[i]=='buy':
+        pf=pf+kl.ticker.iloc[i]
+    else:
+        for c in kl.ticker.iloc[i]:
+            pf.remove(c)
+    kl.pf.iloc[i]=pf
+    
+
+
+
 
 
 # =============================================================================
