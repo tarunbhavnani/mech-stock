@@ -240,7 +240,9 @@ def get_buy_candidates(data,
         if row["flag"]:
 
             if dist_low < row["Dist25"] < dist_high:
-                if row['flag_counter']>5 and row["Dist25_Change"]>0:
+            #if row["Dist25"] < 10:
+                
+                if row['flag_counter']>2 and row["Dist25_Change"]>0:
                     #print(row['flag_counter'])
 
                     buy_list[ticker] = row["Dist25"]
