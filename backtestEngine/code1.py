@@ -120,6 +120,19 @@ def anti_flag_counter(df):
     return df
 
 
+
+def add_sma25_angle(df, window=5):
+    df = df.copy()
+
+    slope = (
+        df["Close"] - df["Close"].shift(window)
+    ) / window
+
+    # Convert slope to angle
+    df["Angle"] = np.degrees(np.arctan(slope))
+
+    return df
+
 def get_day(data):
     max_len=max([len(data[i]) for i in data])
     temp_stock= [i for i in data if len(data[i])==max_len][0]
@@ -189,6 +202,7 @@ def prepare_indicators(data):
         
         df=flag_counter(df)
         df=anti_flag_counter(df)
+        df=add_sma25_angle(df, window=5)
         
 
         data[ticker] = df
@@ -242,7 +256,7 @@ def get_buy_candidates(data,
             if dist_low < row["Dist25"] < dist_high:
             #if row["Dist25"] < 10:
                 
-                if row['flag_counter']>2 and row["Dist25_Change"]>0:
+                if row['flag_counter']>2 and row["Dist25_Change"]>0 and row['Angle']>0:
                     #print(row['flag_counter'])
 
                     buy_list[ticker] = row["Dist25"]
