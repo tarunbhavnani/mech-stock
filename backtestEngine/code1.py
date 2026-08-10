@@ -256,7 +256,7 @@ def get_buy_candidates(data,
             if dist_low < row["Dist25"] < dist_high:
             #if row["Dist25"] < 10:
                 
-                if row['flag_counter']>2 and row["Dist25_Change"]>0 and row['Angle']>0:
+                if row['flag_counter']>2 and row["Dist25_Change"]>0 :#and row['Angle']>0:
                     #print(row['flag_counter'])
 
                     buy_list[ticker] = row["Dist25"]
@@ -362,7 +362,8 @@ def get_sell_list(portfolio,
             continue
 
         #if row["Close"] < portfolio[ticker]['sl']:
-        if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>9:
+        #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>9:
+        if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
         
 
             sell.append(ticker)
