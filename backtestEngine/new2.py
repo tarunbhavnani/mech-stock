@@ -49,7 +49,7 @@ DAY N
 import pandas as pd
 import yfinance as yf
 import numpy as np
-from config import *
+#from config import *
 import copy
 import random
 
@@ -135,10 +135,12 @@ class PortfolioManager:
             self.portfolio[ticker] = {
     
                 "price": price,
+                "bp": price,
     
                 "qty": qty,
     
                 "value": cost,
+                "buy_day":day,
                 "sl":sl
     
             }
@@ -172,10 +174,19 @@ class PortfolioManager:
     
             #if row["Close"] < portfolio[ticker]['sl']:
             #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>9:
-            if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
-            
-    
+            #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
+            if row['anti_flag_counter']>10 and row['Angle']<0:
+                #if day-self.portfolio[ticker]['buy_day']>30:
                 sell.append(ticker)
+            
+            # if row['Close']*self.portfolio[ticker]['qty']<self.portfolio[ticker]['bp']*self.portfolio[ticker]['qty']*.9:
+            #     sell.append(ticker)
+            
+            # if day-self.portfolio[ticker]['buy_day']>30:
+            #     if row['Close']*self.portfolio[ticker]['qty']<self.portfolio[ticker]['bp']*self.portfolio[ticker]['qty']*1.05:
+            #         sell.append(ticker)
+                
+            
     
         return list(set(sell))
 
@@ -261,13 +272,13 @@ class PortfolioManager:
         -------
         list
         """
-        try:
-            nifty_angle=self.get_nifty_angle(day)
-        except:
-            nifty_angle=0
+        # try:
+        #     nifty_flag,_=self.get_nifty_flag(day)
+        # except:
+        #     nifty_flag=0
         
-        if nifty_angle>5:
-            return []
+        # if nifty_flag<4:
+        #     return []
     
         buy_list = {}
     
@@ -285,7 +296,9 @@ class PortfolioManager:
     
                 if self.dist_low < row["Dist25"] < self.dist_high:
                
-                    if row['flag_counter']>5 and row["Angle"]>10 :
+                    #if row["Angle"]>30 :
+                    
+                    if row['flag_counter']>0 and row["Angle"]>10 :
                
                         buy_list[ticker] = row["Dist25"]
     
@@ -352,10 +365,13 @@ class PortfolioManager:
             self.portfolio[ticker] = {
     
                 "price": price,
+                "bp": price,
     
                 "qty": qty,
     
                 "value": cost,
+                
+                "buy_day":day,
                 
                 "sl":sl
     
@@ -371,10 +387,10 @@ class PortfolioManager:
         return bought
 
 
-    def get_nifty_angle(self,day):
+    def get_nifty_flag(self,day):
         row = self.get_row(self.nifty, day)
         #return row['Angle']
-        return row['anti_flag_counter']
+        return row['flag_counter'], row['anti_flag_counter']
     
         
 

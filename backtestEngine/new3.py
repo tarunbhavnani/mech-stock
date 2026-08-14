@@ -5,19 +5,36 @@ Created on Tue Aug 11 19:18:45 2026
 @author: tarun
 """
 
-all_tickers=TICKERS.copy()
-all_data = download_data(all_tickers,start_date='2020-01-01', end_date= '2026-08-05')
+import os
+os.chdir(r"C:\Users\tarun\Desktop\mech-buy\backtestEngine")
 
-all_nifty = download_nifty(start_date='2020-01-01', end_date= '2026-08-05')
+from new1 import *
+from new2 import *
+from config import *
 
 
 
+#all_tickers=TICKERS.copy()
+
+# =============================================================================
+#get all data first
+
+#all_data = download_data(all_tickers,start_date='2020-01-01', end_date= '2026-08-05')
+
+#all_nifty = download_nifty(start_date='2020-01-01', end_date= '2026-08-05')
+ 
+# =============================================================================
+
+#load TICKERS
 
 data,nifty= get_final_data(all_data,all_nifty, TICKERS)
 
 
+#call pm class
+
 pm=PortfolioManager(data,nifty, stoploss, first_day, money, max_positions,dist_low,dist_high)
 
+#run backtest
 
 history, all_bought, all_sold=pm.run_backtest()
 

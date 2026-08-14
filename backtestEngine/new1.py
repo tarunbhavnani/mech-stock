@@ -9,7 +9,7 @@ Created on Tue Aug 11 17:20:17 2026
 import pandas as pd
 import yfinance as yf
 import numpy as np
-from config import *
+#from config import *
 import copy
 
 
@@ -222,6 +222,7 @@ def prepare_indicators(data):
         
         df=flag_counter(df)
         df=anti_flag_counter(df)
+        df=add_angle(df, window=5)
         
 
         data[ticker] = df
@@ -229,6 +230,29 @@ def prepare_indicators(data):
     return data
 
 
+def add_angle(df, window=5):
+    df = df.copy()
+
+    pct_change = (
+        (df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1
+    )
+
+    df["Angle"] = np.degrees(np.arctan(pct_change * 100))
+
+    return df
+
+
+
+# def add_angle(df, window=5):
+#     df = df.copy()
+
+#     pct_change = (
+#         (df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1
+#     )
+
+#     df["Angle"] = np.degrees(np.arctan(pct_change * 100))
+
+#     return df
 
 
 def get_final_data(all_data,nifty, TICKERS):
