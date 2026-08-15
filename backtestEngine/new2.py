@@ -222,12 +222,12 @@ class PortfolioManager:
             if row is None:
                 continue
     
-            #if row["Close"] < portfolio[ticker]['sl']:
+            #if row["Close"] < self.portfolio[ticker]['sl']:
             #if day-self.portfolio[ticker]['buy_day']>30:
             #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>9:
             #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
-            if row['anti_flag_counter']>10 and row['Angle']<20:
             #if ((row['anti_flag_counter'] > 10 and row['Angle'] < 20) or row['Close'] < self.portfolio[ticker]['sl']):
+            if row['anti_flag_counter']>10 and row['Angle']<20:
                 
                 sell.append(ticker)
             
@@ -344,6 +344,8 @@ class PortfolioManager:
         
         allocation_per_stock=np.floor(self.money/available)
         
+        #allocation_per_stock=min(allocation_per_stock,1000000)
+        
         buy_list = buy_list[:available]
         bought=[]
     
@@ -397,7 +399,73 @@ class PortfolioManager:
     
         return bought
 
+    def execute_one_buy(self,buy_list,day):
+        """
+        Buy new stocks.
+    
+        Returns
+        -------
+        portfolio
+        money
+        owned
+        """
+    
+        #owned = list(portfolio.keys())
+    
+        available = self.max_positions - len(self.owned)
+        
+        bought=[]
+    
+        if available <= 0:
+            return 
+        
+        allocation_per_stock=min(self.money, 1000000)
+        # pv,_=self.calculate_portfolio_value()
+        # allocation_per_stock=min(self.money, pv*.1)
+        
+        ticker=buy_list[0]
+        
+    
+        row = self.get_row(self.data[ticker], day)
+    
+        
+    
+        price = row["Close"]
+            
+        qty = int(allocation_per_stock // price)
+            
+    
+ 
+    
+        cost = qty * price
 
+    
+        
+        sl=np.ceil(price*(100-self.stoploss)/100)
+
+        self.portfolio[ticker] = {
+
+            "price": price,
+            "bp": price,
+
+            "qty": qty,
+
+            "value": cost,
+            
+            "buy_day":day,
+            
+            "sl":sl
+
+        }
+        #print("Buy:",portfolio[ticker])
+
+        self.money -= cost
+        
+        bought.append((ticker, price, qty))
+    
+        
+    
+        return bought
     def get_nifty_flag(self,day):
         row = self.get_row(self.nifty, day)
         #return row['Angle']
