@@ -70,20 +70,21 @@ kl.columns=['day', 'action', 'ticker']
 
 kl['pf']=0
 pf=kl.ticker.iloc[0]
+kl['pf'].iloc[0]=pf
 
-pf={}
-temp=[]
-for i in range(0,len(kl)):
+for i in range(1,len(kl)):
+    
     if kl.action.iloc[i]=='buy':
-        temp=temp+kl.ticker.iloc[i]
-    elif kl.action.iloc[i]=='sell':
+        pf=pf+kl.ticker.iloc[i]
+    else:
         for c in kl.ticker.iloc[i]:
-            temp.remove(c)
+            pf.remove(c)
+    kl.pf.iloc[i]=pf
     
-    
-    pf[kl.day.iloc[i]]=temp
-    
- 
+
+
+
+
 
 # =============================================================================
 # current stocks

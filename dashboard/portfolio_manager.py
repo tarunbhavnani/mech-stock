@@ -125,16 +125,18 @@ class PortfolioManager:
             if row["flag"]:
 
                 if dist_low < row["Dist25"] < dist_high:
-                    if (
-                        row["flag_counter"] > 5
-                        and row["Dist25_Change"] > 0
-                    ):
+                    if row['flag_counter']>0 and row["Angle"]>20 :
+                    #if row['flag_counter']>2 and row["Angle"]>10:
+                    # if (
+                    #     row["flag_counter"] > 2
+                    #     and row["Dist25_Change"] > 0
+                    # ):
                         buy_list[ticker] = row["Dist25"]
 
         buy_list = dict(
             sorted(
                 buy_list.items(),
-                key=lambda x: x[1]
+                key=lambda x: x[1],reverse=True
             )
         )
 
@@ -229,7 +231,8 @@ class PortfolioManager:
             
             row = self.data[ticker].iloc[-1]
 
-            if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>9:
+            #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
+            if row['anti_flag_counter']>10 and row['Angle']<20:
             #if row["price"] <= row['sl']:
 
                 sell.append(ticker)

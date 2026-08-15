@@ -152,6 +152,56 @@ class PortfolioManager:
         self.owned = list(self.portfolio.keys())
     
         return  bought
+    
+    def get_buy_candidates(self,day):
+                           
+        """
+        Find stocks eligible for buying.
+    
+        Returns
+        -------
+        list
+        """
+        # try:
+        #     nifty_flag,_=self.get_nifty_flag(day)
+        # except:
+        #     nifty_flag=0
+        
+        # if nifty_flag<4:
+        #     return []
+    
+        buy_list = {}
+    
+        for ticker in self.data:
+    
+            if ticker in self.owned:
+                continue
+    
+            row = self.get_row(self.data[ticker], day)
+    
+            if row is None:
+                continue
+    
+            if row["flag"]:
+    
+                if self.dist_low < row["Dist25"] < self.dist_high:
+               
+                    #if row["Angle"]>30 :
+                    
+                    if row['flag_counter']>0 and row["Angle"]>20 :
+               
+                        buy_list[ticker] = row["Dist25"]
+    
+        buy_list = dict(
+            sorted(
+                buy_list.items(),
+                key=lambda x: x[1],reverse=True
+            )
+        )
+    
+        return list(buy_list.keys())
+
+
 
 
     def get_sell_list(self,day):
@@ -173,11 +223,19 @@ class PortfolioManager:
                 continue
     
             #if row["Close"] < portfolio[ticker]['sl']:
+            #if day-self.portfolio[ticker]['buy_day']>30:
             #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>9:
             #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
-            if row['anti_flag_counter']>10 and row['Angle']<0:
-                #if day-self.portfolio[ticker]['buy_day']>30:
+            if row['anti_flag_counter']>10 and row['Angle']<20:
+            #if ((row['anti_flag_counter'] > 10 and row['Angle'] < 20) or row['Close'] < self.portfolio[ticker]['sl']):
+                
                 sell.append(ticker)
+            
+            
+    
+            
+            # if row['Close']>10 and self.portfolio[ticker]['sl']:
+            #     sell.append(ticker)
             
             # if row['Close']*self.portfolio[ticker]['qty']<self.portfolio[ticker]['bp']*self.portfolio[ticker]['qty']*.9:
             #     sell.append(ticker)
@@ -263,53 +321,6 @@ class PortfolioManager:
             
         return  sold
 
-    def get_buy_candidates(self,day):
-                           
-        """
-        Find stocks eligible for buying.
-    
-        Returns
-        -------
-        list
-        """
-        # try:
-        #     nifty_flag,_=self.get_nifty_flag(day)
-        # except:
-        #     nifty_flag=0
-        
-        # if nifty_flag<4:
-        #     return []
-    
-        buy_list = {}
-    
-        for ticker in self.data:
-    
-            if ticker in self.owned:
-                continue
-    
-            row = self.get_row(self.data[ticker], day)
-    
-            if row is None:
-                continue
-    
-            if row["flag"]:
-    
-                if self.dist_low < row["Dist25"] < self.dist_high:
-               
-                    #if row["Angle"]>30 :
-                    
-                    if row['flag_counter']>0 and row["Angle"]>10 :
-               
-                        buy_list[ticker] = row["Dist25"]
-    
-        buy_list = dict(
-            sorted(
-                buy_list.items(),
-                key=lambda x: x[1],reverse=True
-            )
-        )
-    
-        return list(buy_list.keys())
 
     def execute_buys(self,buy_list,day):
         """

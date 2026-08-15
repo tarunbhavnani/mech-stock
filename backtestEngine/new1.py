@@ -238,6 +238,7 @@ def add_angle(df, window=5):
     )
 
     df["Angle"] = np.degrees(np.arctan(pct_change * 100))
+    
 
     return df
 

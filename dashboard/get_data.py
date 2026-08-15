@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Aug  3 21:23:05 2026
+Created on Tue Aug 11 17:20:17 2026
 
 @author: tarun
 """
 
+
 import pandas as pd
 import yfinance as yf
 import numpy as np
-from config import *
+#from config import *
 import copy
 
 
@@ -16,7 +17,7 @@ import copy
 
 
 def download_data(tickers,
-                  start_date,
+                  start_date,end_date=None,
                   auto_adjust=True):
     """
     Download historical OHLCV data for all tickers.
@@ -40,6 +41,7 @@ def download_data(tickers,
             df = yf.download(
                 ticker,
                 start=start_date,
+                end=end_date,
                 progress=False,
                 auto_adjust=auto_adjust
             )
@@ -76,6 +78,53 @@ def download_data(tickers,
             print(f"{ticker} : {e}")
 
     return data
+
+def download_nifty(
+                  start_date,end_date=None,
+                  auto_adjust=True):
+   
+
+   
+        try:
+
+            df = yf.download(
+                "^NSEI",
+                start=start_date, end= end_date,
+                auto_adjust=True
+            )
+
+          
+
+            # Flatten MultiIndex if required
+            if hasattr(df.columns, "levels"):
+                df.columns = df.columns.get_level_values(0)
+
+            df = df[
+                [
+                    "Close",
+                    "High",
+                    "Low",
+                    "Open",
+                    "Volume"
+                ]
+            ].copy()
+
+            df["date"] = df.index
+            df.reset_index(drop=True, inplace=True)
+
+            df["Ticker"] = 'nifty'
+
+            df.sort_values("date", inplace=True)
+
+      
+        except Exception as e:
+
+            print(f"{e}")
+
+        return df
+
+
+
 
 def flag_counter(df):
     counter=0
@@ -173,10 +222,52 @@ def prepare_indicators(data):
         
         df=flag_counter(df)
         df=anti_flag_counter(df)
+        df=add_angle(df, window=5)
         
 
         data[ticker] = df
 
     return data
+
+
+def add_angle(df, window=5):
+    df = df.copy()
+
+    pct_change = (
+        (df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1
+    )
+
+    df["Angle"] = np.degrees(np.arctan(pct_change * 100))
+
+    return df
+
+
+
+# def add_angle(df, window=5):
+#     df = df.copy()
+
+#     pct_change = (
+#         (df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1
+#     )
+
+#     df["Angle"] = np.degrees(np.arctan(pct_change * 100))
+
+#     return df
+
+
+def get_final_data(all_data,nifty, TICKERS):
+    data= {i:j for i,j in all_data.items() if i in TICKERS}    
+    
+    
+    data = prepare_indicators(data)
+    
+    data=get_day(data)
+    
+    nifty = prepare_indicators({'nifty':nifty})
+    
+    nifty=get_day(nifty)
+    
+    
+    return data, nifty['nifty']
 
 
