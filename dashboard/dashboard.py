@@ -31,6 +31,20 @@ st.set_page_config(
 
 st.title("📈 Mechanical Buy Dashboard")
 
+
+#########################################################
+# LOAD PORTFOLIO and TICKERS
+#########################################################
+
+with open("data/portfolio.json", "r") as f:
+    portfolio = json.load(f)
+
+pf_tickers= [i for i in portfolio]
+
+pf_tickers=[i for i in pf_tickers if i.split('.')[0] not in [i.split('.')[0] for i in TICKERS]]
+
+TICKERS= list(set(TICKERS+pf_tickers))
+
 #########################################################
 # LOAD DATA
 #########################################################
@@ -52,13 +66,9 @@ def load_market():
 
 data = load_market()
 
-#########################################################
-# LOAD PORTFOLIO
-#########################################################
-
-with open("data/portfolio.json", "r") as f:
-    portfolio = json.load(f)
-
+# =============================================================================
+# initialize pm
+# =============================================================================
 pm = PortfolioManager(
     data,
     portfolio,
