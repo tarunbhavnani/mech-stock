@@ -149,10 +149,10 @@ class PortfolioManager:
         
         temp= self.portfolio[ticker]
         temp['qty']=temp['qty']-qty
-        temp['value']= temp['price']*temp['qty']
+        #temp['value']= temp['price']*temp['qty']
         
         self.portfolio[ticker]=temp
-
+        self.update_current_portfolio()
         #sold = self.portfolio.pop(ticker)
 
         #return sold
@@ -160,24 +160,25 @@ class PortfolioManager:
     # =========================================================================
     # Buy stock
     # =========================================================================
-    def buy_stock(self, ticker, price, qty):
+    def buy_stock(self, ticker, qty):
         
         if ticker in self.portfolio:
             bought= self.portfolio[ticker]
             bought['qty']=bought['qty']+qty
-            bought['value']= bought['value']+ price*qty
+            #bought['value']= bought['value']+ price*qty
             
             
         else:    
             bought = {
-                "price": price,
-                "highest_price": price,
+                "price": 0,
+                "highest_price": 0,
                 "qty": qty,
-                "value": price * qty,
-                "sl": np.ceil(price * (100 - self.stoploss) / 100),
+                "value": 0,
+                "sl": 0,
             }
 
         self.portfolio[ticker] = bought
+        self.update_current_portfolio()
 
         return self.portfolio
     # =============================================================================
@@ -232,7 +233,8 @@ class PortfolioManager:
             row = self.data[ticker].iloc[-1]
 
             #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
-            if row['anti_flag_counter']>10 and row['Angle']<20:
+            #if row['anti_flag_counter']>10 and row['Angle']<20:
+            if (row['anti_flag_counter']>10 and row['Angle']<20) or self.portfolio[ticker]['price']<self.portfolio[ticker]['sl']:    
             #if row["price"] <= row['sl']:
 
                 sell.append(ticker)
