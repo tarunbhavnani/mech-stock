@@ -41,7 +41,7 @@ with open("data/portfolio.json", "r") as f:
 
 pf_tickers= [i for i in portfolio]
 
-pf_tickers=[i for i in pf_tickers if i.split('.')[0] not in [i.split('.')[0] for i in TICKERS]]
+TICKERS=[i for i in TICKERS if i.split('.')[0] not in [i.split('.')[0] for i in pf_tickers]]
 
 TICKERS= list(set(TICKERS+pf_tickers))
 
@@ -119,6 +119,17 @@ c4.metric(
 )
 
 st.divider()
+
+
+#########################################################
+# REFRESH
+#########################################################
+
+if st.button("🔄 Refresh Data"):
+
+    st.cache_data.clear()
+
+    st.rerun()
 
 #########################################################
 # HOLDINGS TABLE
@@ -289,44 +300,44 @@ with right:
 # PORTFOLIO ALLOCATION
 #########################################################
 
-st.divider()
+# st.divider()
 
-st.subheader("Portfolio Allocation")
+# st.subheader("Portfolio Allocation")
 
-alloc = pd.DataFrame([
+# alloc = pd.DataFrame([
 
-    {
+#     {
 
-        "Ticker": t,
+#         "Ticker": t,
 
-        "Value": portfolio[t]["value"]
+#         "Value": portfolio[t]["value"]
 
-    }
+#     }
 
-    for t in portfolio
+#     for t in portfolio
 
-])
+# ])
 
-pie = go.Figure(
+# pie = go.Figure(
 
-    data=[
+#     data=[
 
-        go.Pie(
+#         go.Pie(
 
-            labels=alloc["Ticker"],
+#             labels=alloc["Ticker"],
 
-            values=alloc["Value"]
+#             values=alloc["Value"]
 
-        )
+#         )
 
-    ]
+#     ]
 
-)
+# )
 
-st.plotly_chart(
-    pie,
-    use_container_width=True
-)
+# st.plotly_chart(
+#     pie,
+#     use_container_width=True
+# )
 
 #########################################################
 # BUY STOCK
@@ -344,10 +355,10 @@ with st.form("buy"):
         key="buyticker"
     )
 
-    bprice = st.number_input(
-        "Price",
-        min_value=0.0
-    )
+    # bprice = st.number_input(
+    #     "Price",
+    #     min_value=0.0
+    # )
 
     bqty = st.number_input(
         "Qty",
@@ -363,7 +374,7 @@ with st.form("buy"):
 
         pm.buy_stock(
             bticker,
-            bprice,
+            #bprice,
             bqty
         )
 
@@ -388,10 +399,10 @@ with st.form("sell"):
 
     )
 
-    bprice = st.number_input(
-        "Price",
-        min_value=0.0
-    )
+    # bprice = st.number_input(
+    #     "Price",
+    #     min_value=0.0
+    # )
 
     bqty = st.number_input(
         "Qty",
@@ -417,11 +428,39 @@ with st.form("sell"):
 
 
 #########################################################
-# REFRESH
+# ALL TABLE
 #########################################################
 
-if st.button("🔄 Refresh Data"):
+rows = []
 
-    st.cache_data.clear()
+for ticker in data:
 
-    st.rerun()
+    d = data[ticker].iloc[-1]
+
+    
+
+    rows.append({
+
+        "Ticker": ticker,
+        "Open":  d["Open"],
+        "Close": d["Close"],
+        "Low":   d["Low"],
+        "High":  d["High"],
+        "Volume":d["Volume"],
+        "SMA25": d["SMA25"],
+        "flag_counter":      d["flag_counter"],
+        "anti_flag_counter": d["anti_flag_counter"],
+        "Angle":             d["Angle"],
+       
+    })
+
+holdings = pd.DataFrame(rows)
+
+st.subheader("Watchlist")
+
+st.dataframe(
+    holdings,
+    use_container_width=True,
+    hide_index=True
+)
+          
