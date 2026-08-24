@@ -222,7 +222,7 @@ def prepare_indicators(data):
         
         df=flag_counter(df)
         df=anti_flag_counter(df)
-        df=add_angle(df, window=5)
+        df=add_angle(df)
         
 
         data[ticker] = df
@@ -230,14 +230,16 @@ def prepare_indicators(data):
     return data
 
 
-def add_angle(df, window=5):
+def add_angle(df, window=3):
     df = df.copy()
 
-    pct_change = (
-        (df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1
-    )
+    #pct_change = ((df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1)
+    pct_change = ((df["SMA25"] / df["SMA25"].shift(window)) ** (1 / window) - 1)
 
     df["Angle"] = np.degrees(np.arctan(pct_change * 100))
+    df["Angle_flag"] = df['Angle'].rolling(5).mean()
+    df["Angle_flag"]=[i>j for i,j in zip(df["Angle"],df["Angle_flag"] )]
+    
 
     return df
 

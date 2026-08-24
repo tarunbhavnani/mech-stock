@@ -125,7 +125,8 @@ class PortfolioManager:
             if row["flag"]:
 
                 if dist_low < row["Dist25"] < dist_high:
-                    if row['flag_counter']>0 and row["Angle"]>20 :
+                    #if row['flag_counter']>0 and row["Angle"]>20 :
+                    if row['flag_counter']>2 and row["Angle"]>0 and row["Angle_flag"]:
                     #if row['flag_counter']>2 and row["Angle"]>10:
                     # if (
                     #     row["flag_counter"] > 2

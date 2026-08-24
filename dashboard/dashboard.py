@@ -451,6 +451,7 @@ for ticker in data:
         "flag_counter":      d["flag_counter"],
         "anti_flag_counter": d["anti_flag_counter"],
         "Angle":             d["Angle"],
+        "Angle_flag":             d["Angle_flag"]
        
     })
 
