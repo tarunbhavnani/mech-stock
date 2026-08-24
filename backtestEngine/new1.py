@@ -32,9 +32,10 @@ def download_data(tickers,
 
     data = {}
 
-    for ticker in tickers:
+    for n,ticker in enumerate(tickers):
 
-        print(f"Downloading {ticker}")
+        #print(f"Downloading {ticker}")
+        print(n, end=', ', flush=True)
 
         try:
 
@@ -139,6 +140,21 @@ def flag_counter(df):
     df['flag_counter'] =flag_counter
     return df
 
+
+def get_cum_flag(temp, col):
+    lst=[i for i in temp[col]]
+    lst=[1 if i==True else -1 for i in lst]
+    lst[0:25]=[0]*25#since 25 sma flag
+    temp['cum1']=lst
+    temp['cum']=0
+    for i in range(len(temp)):
+        temp['cum'].iloc[i]=sum(temp['cum1'].loc[max(0,i-24):i])
+    temp.pop('cum1')
+    return temp
+    
+    
+    
+
 def anti_flag_counter(df):
     counter=0
     anti_flag_counter=[]
@@ -184,7 +200,8 @@ def prepare_indicators(data):
 
         # Moving averages
 
-        df["SMA25"] = df["Close"].rolling(25).mean()
+        df["SMA25"] = df["Close"].rolling(25).mean()#.ewm(span=25, adjust=False).mean()
+        #df["SMA25"] = df["Close"].ewm(span=25, adjust=False).mean()
         df["SMA100"] = df["Close"].rolling(100).mean()
         df["SMA200"] = df["Close"].rolling(200).mean()
 
@@ -222,7 +239,7 @@ def prepare_indicators(data):
         
         df=flag_counter(df)
         df=anti_flag_counter(df)
-        df=add_angle(df, window=5)
+        df=add_angle(df)
         
 
         data[ticker] = df
@@ -230,14 +247,15 @@ def prepare_indicators(data):
     return data
 
 
-def add_angle(df, window=5):
+def add_angle(df, window=3):
     df = df.copy()
 
-    pct_change = (
-        (df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1
-    )
+    #pct_change = ((df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1)
+    pct_change = ((df["SMA25"] / df["SMA25"].shift(window)) ** (1 / window) - 1)
 
     df["Angle"] = np.degrees(np.arctan(pct_change * 100))
+    df["Angle_flag"] = df['Angle'].rolling(5).mean()
+    df["Angle_flag"]=[i>j for i,j in zip(df["Angle"],df["Angle_flag"] )]
     
 
     return df
