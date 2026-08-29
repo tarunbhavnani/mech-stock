@@ -1,131 +1,107 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Aug 11 17:20:17 2026
+Created on Fri Aug 28 17:26:47 2026
 
 @author: tarun
 """
 
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Aug 27 16:13:37 2026
 
+@author: tarun
+"""
 import pandas as pd
 import yfinance as yf
 import numpy as np
-#from config import *
 import copy
+import os
+from datetime import datetime
 
 
 
+def download_data(
+    tickers,
+    start_date,end_date=None,
+    force_download=False,
+):
+    # -------------------------------------------------------
+    # Download ALL tickers together
+    # -------------------------------------------------------
 
+    print(f"Downloading {len(tickers)} stocks...")
 
-def download_data(tickers,
-                  start_date,end_date=None,
-                  auto_adjust=True):
-    """
-    Download historical OHLCV data for all tickers.
-
-    Returns
-    -------
-    dict
-        {
-            ticker : dataframe
-        }
-    """
+    raw = yf.download(
+        tickers=tickers,
+        start=start_date,
+        end=end_date,
+        progress=True,
+        auto_adjust=True,
+        group_by="ticker",
+        threads=True,
+    )
 
     data = {}
 
-    for n,ticker in enumerate(tickers):
+    # -------------------------------------------------------
+    # Process each ticker
+    # -------------------------------------------------------
 
-        #print(f"Downloading {ticker}")
-        print(n, end=', ', flush=True)
+    for n, ticker in enumerate(tickers):
+
+        print(f"\rProcessing {n + 1}/{len(tickers)}", end="", flush=True)
 
         try:
 
-            df = yf.download(
-                ticker,
-                start=start_date,
-                end=end_date,
-                progress=False,
-                auto_adjust=auto_adjust
-            )
+            # Multiple ticker download gives:
+            # ticker -> OHLCV
+            df = raw[ticker].copy()
 
             if df.empty:
-                print(f"{ticker} : No Data")
                 continue
 
-            # Flatten MultiIndex if required
-            if hasattr(df.columns, "levels"):
-                df.columns = df.columns.get_level_values(0)
-
-            df = df[
-                [
-                    "Close",
-                    "High",
-                    "Low",
-                    "Open",
-                    "Volume"
-                ]
-            ].copy()
+            df = df[["Close", "High", "Low", "Open", "Volume"]]
+            
+            df=df[~df.Close.isnull()]
 
             df["date"] = df.index
             df.reset_index(drop=True, inplace=True)
 
             df["Ticker"] = ticker
 
-            df.sort_values("date", inplace=True)
+            # ------------------------------------------------
+            # Moving averages
+            # ------------------------------------------------
+
+            close = df["Close"]
+
+            df["SMA25"] = close.rolling(25).mean()
+            df["SMA100"] = close.rolling(100).mean()
+            df["SMA200"] = close.rolling(200).mean()
+
+            # ------------------------------------------------
+            # Volume MA
+            # ------------------------------------------------
+
+            df["VOL25"] = df["Volume"].rolling(25).mean()
+
+            # ------------------------------------------------
+            # Distance
+            # ------------------------------------------------
+
+            df["Dist25"] = (close - df["SMA25"]) / df["SMA25"] * 100
+            df["Dist100"] = (close - df["SMA100"]) / df["SMA100"] * 100
+            df["Dist200"] = (close - df["SMA200"]) / df["SMA200"] * 100
 
             data[ticker] = df
 
         except Exception as e:
+            print(f"\n{ticker}: {e}")
 
-            print(f"{ticker} : {e}")
+    
 
+ 
     return data
-
-def download_nifty(
-                  start_date,end_date=None,
-                  auto_adjust=True):
-   
-
-   
-        try:
-
-            df = yf.download(
-                "^NSEI",
-                start=start_date, end= end_date,
-                auto_adjust=True
-            )
-
-          
-
-            # Flatten MultiIndex if required
-            if hasattr(df.columns, "levels"):
-                df.columns = df.columns.get_level_values(0)
-
-            df = df[
-                [
-                    "Close",
-                    "High",
-                    "Low",
-                    "Open",
-                    "Volume"
-                ]
-            ].copy()
-
-            df["date"] = df.index
-            df.reset_index(drop=True, inplace=True)
-
-            df["Ticker"] = 'nifty'
-
-            df.sort_values("date", inplace=True)
-
-      
-        except Exception as e:
-
-            print(f"{e}")
-
-        return df
-
-
-
 
 def flag_counter(df):
     counter=0
@@ -181,6 +157,7 @@ def get_day(data):
     
     return data
 
+
 def prepare_indicators(data):
     """
     Adds all indicators to every dataframe.
@@ -193,58 +170,24 @@ def prepare_indicators(data):
     -------
     dict
     """
-
+    fd={}
     for ticker in data:
+        if len(data[ticker])>0:
 
-        df = data[ticker]
-
-        # Moving averages
-
-        df["SMA25"] = df["Close"].rolling(25).mean()#.ewm(span=25, adjust=False).mean()
-        #df["SMA25"] = df["Close"].ewm(span=25, adjust=False).mean()
-        df["SMA100"] = df["Close"].rolling(100).mean()
-        df["SMA200"] = df["Close"].rolling(200).mean()
-
-        # Volume average
-
-        df["VOL25"] = df["Volume"].rolling(25).mean()
-
-        # Distance from moving averages
-
-        df["Dist25"] = (
-            (df["Close"] - df["SMA25"])
-            / df["SMA25"]
-            * 100
-        )
-
-        df["Dist100"] = (
-            (df["Close"] - df["SMA100"])
-            / df["SMA100"]
-            * 100
-        )
-
-        df["Dist200"] = (
-            (df["Close"] - df["SMA200"])
-            / df["SMA200"]
-            * 100
-        )
-        
-        #rising or falling
-        df["Dist25_Change"] = df["Dist25"].diff()
-        
-        
-        # buy signal
-
-        df["flag"] = df["Close"] > df["SMA25"]
-        
-        df=flag_counter(df)
-        df=anti_flag_counter(df)
-        df=add_angle(df)
+            df = data[ticker]
+            # buy signal
+    
+            df["flag"] = df["Close"] > df["SMA25"]
+            
+            df=flag_counter(df)
+            df=anti_flag_counter(df)
+            df=add_angle(df)
+            
+    
+            fd[ticker.split('.')[0]] = df
         
 
-        data[ticker] = df
-
-    return data
+    return fd
 
 
 def add_angle(df, window=3):
@@ -254,25 +197,76 @@ def add_angle(df, window=3):
     pct_change = ((df["SMA25"] / df["SMA25"].shift(window)) ** (1 / window) - 1)
 
     df["Angle"] = np.degrees(np.arctan(pct_change * 100))
-    df["Angle_flag"] = df['Angle'].rolling(5).mean()
-    df["Angle_flag"]=[i>j for i,j in zip(df["Angle"],df["Angle_flag"] )]
+    
+    # df["Angle_flag"] = df['Angle'].rolling(5).mean()
+    # df["Angle_flag"]=[i>j for i,j in zip(df["Angle"],df["Angle_flag"] )]
+    df["Angle_flag"] = df['Close'].rolling(5).mean()
+    df["Angle_flag"]=[i>j for i,j in zip(df["Close"],df["Angle_flag"] )]
     
 
     return df
 
+def download_nifty(
+                  start_date,end_date=None,
+                  auto_adjust=True):
+   
 
+   
+        try:
 
-# def add_angle(df, window=5):
-#     df = df.copy()
+            df = yf.download(
+                "^NSEI",
+                start=start_date, end= end_date,
+                auto_adjust=True
+            )
 
-#     pct_change = (
-#         (df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1
-#     )
+          
 
-#     df["Angle"] = np.degrees(np.arctan(pct_change * 100))
+            # Flatten MultiIndex if required
+            if hasattr(df.columns, "levels"):
+                df.columns = df.columns.get_level_values(0)
 
-#     return df
+            df = df[
+                [
+                    "Close",
+                    "High",
+                    "Low",
+                    "Open",
+                    "Volume"
+                ]
+            ].copy()
 
+            df["date"] = df.index
+            df.reset_index(drop=True, inplace=True)
+
+            df["Ticker"] = 'nifty'
+            close = df["Close"]
+            df["SMA25"] = close.rolling(25).mean()
+            df["SMA100"] = close.rolling(100).mean()
+            df["SMA200"] = close.rolling(200).mean()
+
+            # ------------------------------------------------
+            # Volume MA
+            # ------------------------------------------------
+
+            df["VOL25"] = df["Volume"].rolling(25).mean()
+
+            # ------------------------------------------------
+            # Distance
+            # ------------------------------------------------
+
+            df["Dist25"] = (close - df["SMA25"]) / df["SMA25"] * 100
+            df["Dist100"] = (close - df["SMA100"]) / df["SMA100"] * 100
+            df["Dist200"] = (close - df["SMA200"]) / df["SMA200"] * 100
+
+            df.sort_values("date", inplace=True)
+
+      
+        except Exception as e:
+
+            print(f"{e}")
+
+        return df
 
 def get_final_data(all_data,nifty, TICKERS):
     data= {i:j for i,j in all_data.items() if i in TICKERS}    
@@ -288,5 +282,24 @@ def get_final_data(all_data,nifty, TICKERS):
     
     
     return data, nifty['nifty']
+
+
+
+
+def sanitize_tickers(ls1,ls2):
+    ls2=[i for i in ls2 if i.split('.')[0] not in [j.split('.')[0] for j in ls1]]
+    ls3=ls1+ls2
+    return ls3
+    
+
+    # ls3=[i for i in my_stocks if i.split('.')[0] not in [j.split('.')[0] for j in fno]]
+
+    # nf=ls2+ls3+fno
+
+    # nf_check=[i.split('.')[0] for i in nf]
+    # len(nf_check)==len(list(set(nf_check)))
+
+    #print(nf)
+
 
 

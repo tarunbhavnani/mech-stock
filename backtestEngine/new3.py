@@ -19,9 +19,9 @@ from config import *
 # =============================================================================
 #get all data first
 
-#all_data = download_data(all_tickers,start_date='2020-01-01', end_date= '2026-08-05')
+#all_data = download_data(all_tickers,start_date='2020-01-01', end_date= '2026-08-28')
 
-#all_nifty = download_nifty(start_date='2020-01-01', end_date= '2026-08-05')
+#all_nifty = download_nifty(start_date='2020-01-01', end_date= '2026-08-28')
  
 # =============================================================================
 
@@ -64,6 +64,20 @@ for i in range(0,len(kl)):
     
     pf[kl.day.iloc[i]]=temp
 
+
+history['chg']=history.equity.diff()
+
+mx=0
+dd=[]
+for i in history['equity']:
+    if i>mx:
+        mx=i
+    if mx!=0:
+        dd.append(round((100*(i-mx)/mx),2))
+    else:
+        dd.append(0)
+        
+history['dd']=dd
 
 # =============================================================================
 # 96 saved version 
