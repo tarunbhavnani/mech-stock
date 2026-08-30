@@ -175,7 +175,7 @@ class PortfolioManager:
         buy_list = {}
     
         for ticker in self.data:
-    
+            self.owned = list(self.portfolio.keys())
             if ticker in self.owned:
                 continue
     
@@ -337,7 +337,7 @@ class PortfolioManager:
         """
     
         #owned = list(portfolio.keys())
-    
+        self.owned = list(self.portfolio.keys())
         available = self.max_positions - len(self.owned)
         
         
@@ -414,7 +414,7 @@ class PortfolioManager:
         """
     
         #owned = list(portfolio.keys())
-    
+        self.owned = list(self.portfolio.keys())
         available = self.max_positions - len(self.owned)
         
         bought=[]
@@ -545,7 +545,7 @@ class PortfolioManager:
             
             print(day, end=", ", flush=True)
             
-            
+            self.owned = list(self.portfolio.keys())
             
             if len(self.owned)==0 :
                 
@@ -571,6 +571,7 @@ class PortfolioManager:
                 
                 
                 #buy new
+                self.owned = list(self.portfolio.keys())
                 if len(self.owned) < self.max_positions :
                     
                     #get buy list
