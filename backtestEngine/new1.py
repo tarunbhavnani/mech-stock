@@ -176,8 +176,8 @@ def prepare_indicators(data):
 
             df = data[ticker]
             # buy signal
-    
             df["flag"] = df["Close"] > df["SMA25"]
+            df["Dist25_Change"] = df["Dist25"].diff()
             
             df=flag_counter(df)
             df=anti_flag_counter(df)
@@ -300,6 +300,3 @@ def sanitize_tickers(ls1,ls2):
     # len(nf_check)==len(list(set(nf_check)))
 
     #print(nf)
-
-
-
