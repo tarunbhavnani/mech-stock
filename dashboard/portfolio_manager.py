@@ -126,7 +126,8 @@ class PortfolioManager:
 
                 if dist_low < row["Dist25"] < dist_high:
                     #if row['flag_counter']>0 and row["Angle"]>20 :
-                    if row['flag_counter']>2 and row["Angle"]>0 and row["Angle_flag"]:
+                    #if row['flag_counter']>2 and row["Angle"]>0 and row["Angle_flag"]:
+                    if row['flag_counter']>5 and row["Angle"]>20 and row["Angle_flag"]:
                     #if row['flag_counter']>2 and row["Angle"]>10:
                     # if (
                     #     row["flag_counter"] > 2
@@ -235,7 +236,8 @@ class PortfolioManager:
 
             #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
             #if row['anti_flag_counter']>10 and row['Angle']<20:
-            if (row['anti_flag_counter']>10 and row['Angle']<20) or self.portfolio[ticker]['price']<self.portfolio[ticker]['sl']:    
+            #if (row['anti_flag_counter']>10 and row['Angle']<20) or self.portfolio[ticker]['price']<self.portfolio[ticker]['sl']:
+            if row['anti_flag_counter']>7 and row['Angle']<20 :
             #if row["price"] <= row['sl']:
 
                 sell.append(ticker)
