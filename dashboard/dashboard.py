@@ -3,7 +3,9 @@
 Created on Tue Aug  4 20:04:08 2026
 
 @author: tarun
+
 """
+
 
 # dashboard.py
 
@@ -41,9 +43,9 @@ with open("data/portfolio.json", "r") as f:
 
 pf_tickers= [i for i in portfolio]
 
-TICKERS=[i for i in TICKERS if i.split('.')[0] not in [i.split('.')[0] for i in pf_tickers]]
+#TICKERS=[i for i in TICKERS if i.split('.')[0] not in [i.split('.')[0] for i in pf_tickers]]
 
-TICKERS= list(set(TICKERS+pf_tickers))
+TICKERS= list(set(TICKERS))
 
 #########################################################
 # LOAD DATA
@@ -209,7 +211,8 @@ with left:
             "Close",
             "Dist25",
             "Dist25_Change",
-            "flag_counter"
+            "flag_counter",
+            "Angle"
         ]]
 
         st.dataframe(
@@ -342,89 +345,93 @@ with right:
 #########################################################
 # BUY STOCK
 #########################################################
-
 st.divider()
+left, right = st.columns(2)
 
-st.subheader("Buy Stock")
+with left:
 
-with st.form("buy"):
-
-    bticker = st.selectbox(
-        "Ticker",
-        sorted(data.keys()),
-        key="buyticker"
-    )
-
-    # bprice = st.number_input(
-    #     "Price",
-    #     min_value=0.0
-    # )
-
-    bqty = st.number_input(
-        "Qty",
-        min_value=1,
-        step=1
-    )
-
-    submit = st.form_submit_button(
-        "Buy"
-    )
-
-    if submit:
-
-        pm.buy_stock(
-            bticker,
-            #bprice,
-            bqty
+    
+    
+    st.subheader("Buy Stock")
+    
+    with st.form("buy"):
+    
+        bticker = st.selectbox(
+            "Ticker",
+            sorted(data.keys()),
+            key="buyticker"
         )
-
-        pm.save_portfolio()
-
-        st.success("Portfolio Updated")
+    
+        # bprice = st.number_input(
+        #     "Price",
+        #     min_value=0.0
+        # )
+    
+        bqty = st.number_input(
+            "Qty",
+            min_value=1,
+            step=1
+        )
+    
+        submit = st.form_submit_button(
+            "Buy"
+        )
+    
+        if submit:
+    
+            pm.buy_stock(
+                bticker,
+                #bprice,
+                bqty
+            )
+    
+            pm.save_portfolio()
+    
+            st.success("Portfolio Updated")
 
 #########################################################
 # SELL STOCK
 #########################################################
-
-st.subheader("Sell Stock")
-
-
-with st.form("sell"):
-
-    bticker = st.selectbox(
-
-        "Holding",
-
-        list(portfolio.keys())
-
-    )
-
-    # bprice = st.number_input(
-    #     "Price",
-    #     min_value=0.0
-    # )
-
-    bqty = st.number_input(
-        "Qty",
-        min_value=1,
-        step=1
-    )
-
-    submit = st.form_submit_button(
-        "Sell"
-    )
-
-    if submit:
-
-        pm.sell_stock(
-            bticker,
-            
-            bqty
+with right:
+    st.subheader("Sell Stock")
+    
+    
+    with st.form("sell"):
+    
+        bticker = st.selectbox(
+    
+            "Holding",
+    
+            list(portfolio.keys())
+    
         )
-
-        pm.save_portfolio()
-
-        st.success("Stock Sold")
+    
+        # bprice = st.number_input(
+        #     "Price",
+        #     min_value=0.0
+        # )
+    
+        bqty = st.number_input(
+            "Qty",
+            min_value=1,
+            step=1
+        )
+    
+        submit = st.form_submit_button(
+            "Sell"
+        )
+    
+        if submit:
+    
+            pm.sell_stock(
+                bticker,
+                
+                bqty
+            )
+    
+            pm.save_portfolio()
+    
+            st.success("Stock Sold")
 
 
 #########################################################
@@ -442,10 +449,11 @@ for ticker in data:
     rows.append({
 
         "Ticker": ticker,
-        "Open":  d["Open"],
-        "Close": d["Close"],
-        "Low":   d["Low"],
-        "High":  d["High"],
+        "Price":  d["Close"],
+        "Change": d["Dist25_Change"],
+        "Day High":   d["High"],
+        "Day Low":  d["Low"],
+        "Swing":  round(100*(d["High"]-d["Low"])/d["Low"],2),
         "Volume":d["Volume"],
         "SMA25": d["SMA25"],
         "flag_counter":      d["flag_counter"],
