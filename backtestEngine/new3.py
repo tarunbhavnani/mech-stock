@@ -79,6 +79,17 @@ for i in history['equity']:
         
 history['dd']=dd
 
+
+hj=final3.groupby(['ticker', 'qty'])
+fd={}
+for i in hj:
+    try:
+    
+        buy=i[1][i[1]['action']=='buy']['price'].iloc[0]*i[1][i[1]['action']=='buy']['qty'].iloc[0]
+        sell=i[1][i[1]['action']=='sell']['price'].iloc[0]*i[1][i[1]['action']=='sell']['qty'].iloc[0]
+        fd[i[0]]=(sell-buy)/buy
+    except:
+        pass
 # =============================================================================
 # 96 saved version 
 # ==================================================
