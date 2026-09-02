@@ -279,10 +279,8 @@ class PortfolioManager:
             
         
         rec=pd.concat([sell_rec,buy_rec])
-        if len(rec)>0:
-            return rec
-        else:
-            return pd.DataFrame({"comment": ["No open slots to buy more"]})
+        
+        return rec
         
             
             

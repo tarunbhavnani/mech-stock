@@ -267,11 +267,14 @@ with right:
 # =============================================================================
 st.subheader("Delnaaz's Recommendation")
 
-st.dataframe(
-    rec,
-    use_container_width=True,
-    hide_index=True
-)
+if len(rec)>0:
+    st.dataframe(
+        rec,
+        use_container_width=True,
+        hide_index=True
+    )
+else:
+    st.success("No Open slots to buy")
 
 #########################################################
 # STOCK CHART
