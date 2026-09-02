@@ -229,7 +229,7 @@ class PortfolioManager:
             #if row["Close"] < row['SMA25']*.95 and row['anti_flag_counter']>9:
             #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
             #if ((row['anti_flag_counter'] > 10 and row['Angle'] < 20) or row['Close'] < self.portfolio[ticker]['sl']):
-            if row['anti_flag_counter']>7 and row['Angle']<20 :
+            if row['anti_flag_counter']>7 and row['Angle']<20 and row['Angle_flag']==False:
             #if row["Angle_flag"]==False and row['Angle']<20 :
                 
                 sell.append(ticker)
