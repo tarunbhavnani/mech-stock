@@ -30,6 +30,7 @@ class PortfolioManager:
         self.stoploss = stoploss
         self.portfolio = portfolio
         self.hp = self.get_highest_prices()
+        self.max_pos=10
 
    
     
@@ -241,9 +242,9 @@ class PortfolioManager:
         
         sell_value= sum([self.portfolio[i]['value'] for i in sell_list])
         
-        max_pos=10
         
-        allocation_per_stock=sum([self.portfolio[i]['value'] for i in self.portfolio])/max_pos
+        
+        allocation_per_stock=sum([self.portfolio[i]['value'] for i in self.portfolio])/self.max_pos
         
         money=sell_value
         
@@ -270,15 +271,19 @@ class PortfolioManager:
                 buy_rec[buy]=qty
                 
         buy_rec=pd.DataFrame(buy_rec.items())
-        if len(buy_rec)>0:
+        if len(buy_rec)>0 and len(self.portfolio)<self.max_pos:
             buy_rec.columns=['Stock', 'Qty']
             buy_rec['Action']='Buy'
         else:
             buy_rec=pd.DataFrame(columns=['Stock', 'Qty','Action'])
             
         
+        rec=pd.concat([sell_rec,buy_rec])
+        if len(rec)>0:
+            return rec
+        else:
+            return pd.DataFrame({"comment": ["No open slots to buy more"]})
         
-        return pd.concat([ sell_rec,buy_rec])
             
             
         
