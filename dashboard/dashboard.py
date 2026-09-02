@@ -87,6 +87,8 @@ buy_list = pm.get_buy_candidates(
 
 sell_list = pm.get_sell_list()
 
+rec= pm.buy_rec()
+
 #########################################################
 # SUMMARY
 #########################################################
@@ -142,42 +144,44 @@ rows = []
 for ticker in portfolio:
 
     p = portfolio[ticker]
+    if p['qty']>0:
 
-    pnl = (
-        (p["price"] - p["highest_price"])
-        / p["highest_price"]
-        * 100
-    )
-
-    dist_sl = (
-        (p["price"] - p["sl"])
-        / p["sl"]
-        * 100
-    )
-
-    rows.append({
-
-        "Ticker": ticker,
-
-        "Qty": p["qty"],
-
-        "Current": p["price"],
-
-        "Highest": p["highest_price"],
-
-        #"SL": p["sl"],
-
-        "Value": p["value"],
-
-        "Drawdown %": round(pnl,2),
-
-        #"Dist to SL %": 100*(1-(p['sl']/p["price"]))
-        '25SMA':data[ticker]['SMA25'].iloc[-1],
-        "Flag": data[ticker]['flag_counter'].iloc[-1],
-        "Anti Flag": data[ticker]['anti_flag_counter'].iloc[-1]
-        
-
-    })
+        pnl = (
+            (p["price"] - p["highest_price"])
+            / p["highest_price"]
+            * 100
+        )
+    
+        dist_sl = (
+            (p["price"] - p["sl"])
+            / p["sl"]
+            * 100
+        )
+    
+        rows.append({
+    
+            "Ticker": ticker,
+    
+            "Qty": p["qty"],
+    
+            "Current": p["price"],
+    
+            "Highest": p["highest_price"],
+    
+            #"SL": p["sl"],
+    
+            "Value": p["value"],
+    
+            "Drawdown %": round(pnl,2),
+    
+            #"Dist to SL %": 100*(1-(p['sl']/p["price"]))
+            '25SMA':data[ticker]['SMA25'].iloc[-1],
+            '100SMA':data[ticker]['SMA100'].iloc[-1],
+            "Flag": data[ticker]['flag_counter'].iloc[-1],
+            "Anti Flag": data[ticker]['anti_flag_counter'].iloc[-1]
+            
+    
+        })
 
 holdings = pd.DataFrame(rows)
 
@@ -256,6 +260,18 @@ with right:
     else:
 
         st.success("No Sell Signals")
+        
+        
+# =============================================================================
+# buy rec
+# =============================================================================
+st.subheader("Delnaaz's Recommendation")
+
+st.dataframe(
+    rec,
+    use_container_width=True,
+    hide_index=True
+)
 
 #########################################################
 # STOCK CHART

@@ -20,6 +20,7 @@ add function to check portfolio drawdown, sell all at 5 pc?
 
 import numpy as np
 import json
+import pandas as pd
 
 class PortfolioManager:
 
@@ -102,6 +103,10 @@ class PortfolioManager:
 
             
             self.portfolio[ticker]["sl"] = np.ceil(self.portfolio[ticker]["highest_price"] * (100 - self.stoploss) / 100)
+            
+            
+            
+            self.save_portfolio()
 
         return self.portfolio
 
@@ -154,6 +159,7 @@ class PortfolioManager:
         #temp['value']= temp['price']*temp['qty']
         
         self.portfolio[ticker]=temp
+        self.portfolio={i:j for i,j in self.portfolio.items() if j['qty']>0}
         self.update_current_portfolio()
         #sold = self.portfolio.pop(ticker)
 
@@ -192,30 +198,7 @@ class PortfolioManager:
         with open("data\portfolio.json", "w") as f:
             json.dump(self.portfolio, f, indent=4, default=lambda x: x.item() if isinstance(x, np.generic) else x)
             
-    # # =============================================================================
-    # # get sell list    
-    # # =============================================================================
-    # def get_sell_list(self):
-    #     """
-    #     Find all stocks that should be sold.
-
-    #     Returns
-    #     -------
-    #     list
-    #     """
-
-    #     sell = []
-
-    #     for ticker in self.portfolio:
-    #         row= self.portfolio[ticker]
-
-            
-    #         if row["price"] <= row['sl']:
-
-    #             sell.append(ticker)
-
-    #     return sell
-    
+ 
     # =============================================================================
     # get sell list    
     # =============================================================================
@@ -244,6 +227,59 @@ class PortfolioManager:
 
         return sell
     
-    
-    
+    def buy_rec(self):
+
+        sell_list = self.get_sell_list()
+        
+        sell_rec={i:pm.portfolio[i]['qty'] for i in sell_list}
+        sell_rec=pd.DataFrame(sell_rec.items())
+        if len(sell_rec)>0:
+            sell_rec.columns=['Stock', 'Qty']
+            sell_rec['Action']='Sell'
+        else:
+            sell_rec=pd.DataFrame(columns=['Stock', 'Qty','Action'])
+        
+        sell_value= sum([self.portfolio[i]['value'] for i in sell_list])
+        
+        max_pos=10
+        
+        allocation_per_stock=sum([self.portfolio[i]['value'] for i in self.portfolio])/max_pos
+        
+        money=sell_value
+        
+        buy_rec= {}
+        buy_list = self.get_buy_candidates(2,5)
+            
+            
+        for buy in buy_list:
+            #break
+            price= self.data[buy]['Close'].iloc[-1]
+            
+            if money > allocation_per_stock:
+        
+                qty = int(allocation_per_stock // price)
+                
+                money-=price*qty
+                
+                buy_rec[buy]=qty
+            
+            else:
+                
+                qty = int(money // price)
+                
+                buy_rec[buy]=qty
+                
+        buy_rec=pd.DataFrame(buy_rec.items())
+        if len(buy_rec)>0:
+            buy_rec.columns=['Stock', 'Qty']
+            buy_rec['Action']='Buy'
+        else:
+            buy_rec=pd.DataFrame(columns=['Stock', 'Qty','Action'])
+            
+        
+        
+        return pd.concat([ sell_rec,buy_rec])
+            
+            
+        
     
