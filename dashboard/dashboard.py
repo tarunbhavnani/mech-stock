@@ -25,6 +25,7 @@ from charts import (
 from config import *
 from get_data import download_data, prepare_indicators
 from portfolio_manager import PortfolioManager
+from utils import show_data
 
 st.set_page_config(
     page_title="Mechanical Buy Dashboard",
@@ -89,6 +90,9 @@ sell_list = pm.get_sell_list()
 
 rec= pm.buy_rec()
 
+inc_exp= pm.increase_exposure_candidates()
+dec_exp= pm.decrease_exposure_candidates()
+
 #########################################################
 # SUMMARY
 #########################################################
@@ -139,51 +143,11 @@ if st.button("🔄 Refresh Data"):
 # HOLDINGS TABLE
 #########################################################
 
-rows = []
 
-for ticker in portfolio:
+holdings = show_data(data,portfolio)
+holdings['holdings']= [portfolio[i]['qty'] for i in holdings.Ticker]
+holdings['value']= [portfolio[i]['value'] for i in holdings.Ticker]
 
-    p = portfolio[ticker]
-    if p['qty']>0:
-
-        pnl = (
-            (p["price"] - p["highest_price"])
-            / p["highest_price"]
-            * 100
-        )
-    
-        dist_sl = (
-            (p["price"] - p["sl"])
-            / p["sl"]
-            * 100
-        )
-    
-        rows.append({
-    
-            "Ticker": ticker,
-    
-            "Qty": p["qty"],
-    
-            "Current": p["price"],
-    
-            "Highest": p["highest_price"],
-    
-            #"SL": p["sl"],
-    
-            "Value": p["value"],
-    
-            "Drawdown %": round(pnl,2),
-    
-            #"Dist to SL %": 100*(1-(p['sl']/p["price"]))
-            '25SMA':data[ticker]['SMA25'].iloc[-1],
-            '100SMA':data[ticker]['SMA100'].iloc[-1],
-            "Flag": data[ticker]['flag_counter'].iloc[-1],
-            "Anti Flag": data[ticker]['anti_flag_counter'].iloc[-1]
-            
-    
-        })
-
-holdings = pd.DataFrame(rows)
 
 st.subheader("Current Portfolio")
 
@@ -275,6 +239,56 @@ if len(rec)>0:
     )
 else:
     st.success("No Open slots to buy")
+
+# =============================================================================
+# Increae exposure rec
+# =============================================================================
+left, right = st.columns(2)
+
+with left:
+
+    st.subheader("Increase exposure candidates")
+
+    if len(inc_exp)>0:
+        
+        inc_rec=show_data(data,inc_exp)
+        
+
+        
+        
+        st.dataframe(
+            inc_rec,
+            use_container_width=True,
+            hide_index=True
+        )
+
+    else:
+        st.success("Nothing good to increase exposure")
+
+with right:
+
+    st.subheader("Decrease exposure candidates")
+
+    if len(dec_exp)>0:
+        
+        dec_exp=show_data(data,dec_exp)
+        
+
+        
+        
+        st.dataframe(
+            dec_exp,
+            use_container_width=True,
+            hide_index=True
+        )
+
+    else:
+        st.success("Nothing bad to decrease exposure")
+        st.dataframe(
+            pd.DataFrame(sell_rows),
+            use_container_width=True,
+            hide_index=True
+        )
 
 #########################################################
 # STOCK CHART
@@ -457,32 +471,9 @@ with right:
 # ALL TABLE
 #########################################################
 
-rows = []
 
-for ticker in data:
 
-    d = data[ticker].iloc[-1]
-
-    
-
-    rows.append({
-
-        "Ticker": ticker,
-        "Price":  d["Close"],
-        "Change": d["Dist25_Change"],
-        "Day High":   d["High"],
-        "Day Low":  d["Low"],
-        "Swing":  round(100*(d["High"]-d["Low"])/d["Low"],2),
-        "Volume":d["Volume"],
-        "SMA25": d["SMA25"],
-        "flag_counter":      d["flag_counter"],
-        "anti_flag_counter": d["anti_flag_counter"],
-        "Angle":             d["Angle"],
-        "Angle_flag":             d["Angle_flag"]
-       
-    })
-
-holdings = pd.DataFrame(rows)
+holdings = show_data(data,data)
 
 st.subheader("Watchlist")
 

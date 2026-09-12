@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Aug  3 21:36:52 2026
-
-@author: tarun
-"""
 
 # -*- coding: utf-8 -*-
 """
@@ -228,11 +222,28 @@ class PortfolioManager:
 
         return sell
     
+    def increase_exposure_candidates(self):
+        stocks=[]
+        for i in self.portfolio:
+            row= self.data[i].iloc[-1]
+            if row['Angle']>20 and row['Angle_flag'] and row['flag_counter']>5:
+                stocks.append(i)
+        return stocks
+
+    def decrease_exposure_candidates(self):
+        stocks=[]
+        for i in self.portfolio:
+            row= self.data[i].iloc[-1]
+            if row['Angle']<0 and row['Angle_flag']==False:
+                stocks.append(i)
+        return stocks
+
+
     def buy_rec(self):
 
         sell_list = self.get_sell_list()
         
-        sell_rec={i:pm.portfolio[i]['qty'] for i in sell_list}
+        sell_rec={i:self.portfolio[i]['qty'] for i in sell_list}
         sell_rec=pd.DataFrame(sell_rec.items())
         if len(sell_rec)>0:
             sell_rec.columns=['Stock', 'Qty']
