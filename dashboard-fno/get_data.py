@@ -16,8 +16,7 @@ import yfinance as yf
 import numpy as np
 import copy
 import os
-from datetime import datetime, timedelta
-
+from datetime import datetime
 
 
 
@@ -178,12 +177,11 @@ def prepare_indicators(data, flag='SMA25'):
             df = data[ticker]
             # buy signal
             df["flag"] = df["Close"] > df[flag]
-            df["Dist25_Change"] = (df["Close"] - df["Close"].shift(1)) / df["Close"].shift(1) * 100
+            df["Dist25_Change"] = df["Dist25"].diff()
             
             df=flag_counter(df)
             df=anti_flag_counter(df)
             df=add_angle(df)
-            
             df=vol_analysis(df)
             
     
@@ -305,6 +303,8 @@ def sanitize_tickers(ls1,ls2):
     #print(nf)
 
 
+
+
 def download_data_hourly(
     tickers,
     start_date=None,
@@ -420,6 +420,137 @@ def download_data_hourly(
     print("\nDone.")
 
     return data
+
+
+
+import yfinance as yf
+import pandas as pd
+from datetime import datetime, timedelta
+
+
+def download_nifty_hourly(
+    start_date=None,
+    end_date=None,
+    auto_adjust=True
+):
+
+    # -------------------------------------------------------
+    # Last 60 days by default
+    # -------------------------------------------------------
+
+    if start_date is None:
+        start_date = datetime.now() - timedelta(days=60)
+
+    if end_date is None:
+        end_date = datetime.now()
+
+    try:
+
+        print(
+            f"Downloading NIFTY 1-hour data: "
+            f"{start_date.date()} to {end_date.date()}"
+        )
+
+        df = yf.download(
+            "^NSEI",
+            start=start_date,
+            end=end_date,
+            interval="1h",
+            auto_adjust=auto_adjust,
+            progress=True
+        )
+
+        if df.empty:
+            print("No NIFTY data downloaded.")
+            return pd.DataFrame()
+
+        # ---------------------------------------------------
+        # Flatten MultiIndex if required
+        # ---------------------------------------------------
+
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+
+        # ---------------------------------------------------
+        # Select required columns
+        # ---------------------------------------------------
+
+        df = df[
+            [
+                "Close",
+                "High",
+                "Low",
+                "Open",
+                "Volume"
+            ]
+        ].copy()
+
+        # Remove rows with missing Close
+        df = df[~df["Close"].isnull()]
+
+        # ---------------------------------------------------
+        # Date
+        # ---------------------------------------------------
+
+        df["date"] = df.index
+        df.reset_index(drop=True, inplace=True)
+
+        df["Ticker"] = "nifty"
+
+        # ---------------------------------------------------
+        # Moving averages
+        # ---------------------------------------------------
+
+        close = df["Close"]
+
+        df["SMA25"] = close.rolling(25).mean()
+        df["SMA100"] = close.rolling(100).mean()
+        df["SMA200"] = close.rolling(200).mean()
+
+        # ---------------------------------------------------
+        # Volume MA
+        # ---------------------------------------------------
+
+        df["VOL25"] = df["Volume"].rolling(25).mean()
+
+        # ---------------------------------------------------
+        # Distance from moving averages
+        # ---------------------------------------------------
+
+        df["Dist25"] = (
+            (close - df["SMA25"])
+            / df["SMA25"]
+            * 100
+        )
+
+        df["Dist100"] = (
+            (close - df["SMA100"])
+            / df["SMA100"]
+            * 100
+        )
+
+        df["Dist200"] = (
+            (close - df["SMA200"])
+            / df["SMA200"]
+            * 100
+        )
+
+        # ---------------------------------------------------
+        # Sort
+        # ---------------------------------------------------
+
+        df.sort_values("date", inplace=True)
+        df.reset_index(drop=True, inplace=True)
+
+        print(f"Downloaded {len(df)} hourly candles.")
+
+        return df
+
+    except Exception as e:
+
+        print(f"NIFTY download error: {e}")
+
+        return pd.DataFrame()
 
 def vol_analysis(data, window=150):
     df = data.tail(window).copy()

@@ -5,6 +5,10 @@ Created on Mon Aug  3 21:19:45 2026
 @author: tarun
 flag is close > 25sma
 flag counter is consecutive days above 25sma
+
+added vol sd. 
+if vol on high sd and price movement is not positive, it is a big signal of buying exhaustion!!
+
 """
 
 import os
@@ -28,7 +32,9 @@ data = download_data(TICKERS,start_date)
 
 data = prepare_indicators(data)
 
+data_hourly = download_data_hourly(TICKERS)
 
+data_hourly = prepare_indicators(data_hourly, flag='SMA100')
 # =============================================================================
 # get current portfolio
 # =============================================================================
@@ -39,11 +45,13 @@ import json
 with open("data\portfolio.json", "r") as f:
     portfolio = json.load(f)
 
+#portfolio={i.split('.')[0]:j for i,j in portfolio.items()}
+
 # =============================================================================
 # load PM class and update prices
 # =============================================================================
 
-pm = PortfolioManager(data, portfolio, stoploss,pf_start_date)
+pm = PortfolioManager(data, data_hourly,portfolio, stoploss,pf_start_date)
 
 updated_portfolio=pm.update_current_portfolio()
 

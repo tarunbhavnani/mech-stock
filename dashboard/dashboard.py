@@ -23,7 +23,7 @@ from charts import (
     distance_chart
 )
 from config import *
-from get_data import download_data, prepare_indicators
+from get_data import download_data, prepare_indicators,download_data_hourly
 from portfolio_manager import PortfolioManager
 from utils import show_data
 
@@ -63,17 +63,20 @@ def load_market():
     )
 
     data = prepare_indicators(data)
+    data_hourly = download_data_hourly(TICKERS)
 
-    return data
+    data_hourly = prepare_indicators(data_hourly, flag='SMA100')
+
+    return data,data_hourly
 
 
-data = load_market()
+data,data_hourly = load_market()
 
 # =============================================================================
 # initialize pm
 # =============================================================================
 pm = PortfolioManager(
-    data,
+    data,data_hourly,
     portfolio,
     stoploss,
     pf_start_date
@@ -144,7 +147,7 @@ if st.button("🔄 Refresh Data"):
 #########################################################
 
 
-holdings = show_data(data,portfolio)
+holdings = show_data(data,data_hourly,portfolio)
 holdings['holdings']= [portfolio[i]['qty'] for i in holdings.Ticker]
 holdings['value']= [portfolio[i]['value'] for i in holdings.Ticker]
 
@@ -251,7 +254,7 @@ with left:
 
     if len(inc_exp)>0:
         
-        inc_rec=show_data(data,inc_exp)
+        inc_rec=show_data(data,data_hourly,inc_exp)
         
 
         
@@ -271,7 +274,7 @@ with right:
 
     if len(dec_exp)>0:
         
-        dec_exp=show_data(data,dec_exp)
+        dec_exp=show_data(data,data_hourly,dec_exp)
         
 
         
@@ -284,11 +287,11 @@ with right:
 
     else:
         st.success("Nothing bad to decrease exposure")
-        st.dataframe(
-            pd.DataFrame(sell_rows),
-            use_container_width=True,
-            hide_index=True
-        )
+        # st.dataframe(
+        #     pd.DataFrame(sell_rows),
+        #     use_container_width=True,
+        #     hide_index=True
+        # )
 
 #########################################################
 # STOCK CHART
@@ -473,7 +476,7 @@ with right:
 
 
 
-holdings = show_data(data,data)
+holdings = show_data(data,data_hourly,data)
 
 st.subheader("Watchlist")
 
