@@ -18,8 +18,9 @@ import pandas as pd
 
 class PortfolioManager:
 
-    def __init__(self, data, portfolio, stoploss, pf_start_date):
+    def __init__(self, data,data_hourly, portfolio, stoploss, pf_start_date):
         self.data = data
+        self.data_hourly = data_hourly
         self.pf_start_date=pf_start_date
         self.stoploss = stoploss
         self.portfolio = portfolio
@@ -118,6 +119,7 @@ class PortfolioManager:
         for ticker in self.data:
 
             row = self.data[ticker].iloc[-1]
+            row_hourly = self.data_hourly[ticker].iloc[-1]
 
             if row is None:
                 continue
@@ -127,7 +129,8 @@ class PortfolioManager:
                 if dist_low < row["Dist25"] < dist_high:
                     #if row['flag_counter']>0 and row["Angle"]>20 :
                     #if row['flag_counter']>2 and row["Angle"]>0 and row["Angle_flag"]:
-                    if row['flag_counter']>5 and row["Angle"]>20 and row["Angle_flag"]:
+                    #if row['flag_counter']>5 and row["Angle"]>20 and row["Angle_flag"]:
+                    if row['flag_counter']>5 and row["Angle"]>20 and row["Angle_flag"] and row_hourly['flag_counter']>5:
                     #if row['flag_counter']>2 and row["Angle"]>10:
                     # if (
                     #     row["flag_counter"] > 2
@@ -211,11 +214,12 @@ class PortfolioManager:
         for ticker in self.portfolio:
             
             row = self.data[ticker].iloc[-1]
+            row_hourly = self.data_hourly[ticker].iloc[-1]
 
             #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
             #if row['anti_flag_counter']>10 and row['Angle']<20:
             #if (row['anti_flag_counter']>10 and row['Angle']<20) or self.portfolio[ticker]['price']<self.portfolio[ticker]['sl']:
-            if row['anti_flag_counter']>7 and row['Angle']<20 and row['Angle_flag']==False:
+            if row['anti_flag_counter']>7 and row['Angle']<20 and row['Angle_flag']==False and row_hourly['flag_counter']<2:
             #if row["price"] <= row['sl']:
 
                 sell.append(ticker)
@@ -234,7 +238,8 @@ class PortfolioManager:
         stocks=[]
         for i in self.portfolio:
             row= self.data[i].iloc[-1]
-            if row['Angle']<0 and row['Angle_flag']==False:
+            row_hourly = self.data_hourly[i].iloc[-1]
+            if row['Angle']<20 and row['Angle_flag']==False and row_hourly['anti_flag_counter']>0 and row_hourly['anti_flag_counter']>0:
                 stocks.append(i)
         return stocks
 
