@@ -119,9 +119,14 @@ class PortfolioManager:
         for ticker in self.data:
 
             row = self.data[ticker].iloc[-1]
-            row_hourly = self.data_hourly[ticker].iloc[-1]
+            try:
+                row_hourly = self.data_hourly[ticker].iloc[-1]
+            except:
+                row_hourly={"flag_counter":0}
 
             if row is None:
+                continue
+            if row_hourly is None:
                 continue
 
             if row["flag"]:
@@ -214,12 +219,38 @@ class PortfolioManager:
         for ticker in self.portfolio:
             
             row = self.data[ticker].iloc[-1]
-            row_hourly = self.data_hourly[ticker].iloc[-1]
+            #row_hourly = self.data_hourly[ticker].iloc[-1]
 
             #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
             #if row['anti_flag_counter']>10 and row['Angle']<20:
             #if (row['anti_flag_counter']>10 and row['Angle']<20) or self.portfolio[ticker]['price']<self.portfolio[ticker]['sl']:
-            if row['anti_flag_counter']>7 and row['Angle']<20 and row['Angle_flag']==False and row_hourly['flag_counter']<2:
+            if row['anti_flag_counter']>7 and row['Angle']<20 and row['Angle_flag']==False :
+            #if row["price"] <= row['sl']:
+
+                sell.append(ticker)
+
+        return sell
+    
+    def get_Overall_sell_list(self):
+        """
+        Find all stocks that should be sold.
+
+        Returns
+        -------
+        list
+        """
+
+        sell = []
+
+        for ticker in self.data:
+            
+            row = self.data[ticker].iloc[-1]
+            #row_hourly = self.data_hourly[ticker].iloc[-1]
+
+            #if row["Close"] < row['SMA25']*.98 and row['anti_flag_counter']>5 and row['Angle']<0:
+            #if row['anti_flag_counter']>10 and row['Angle']<20:
+            #if (row['anti_flag_counter']>10 and row['Angle']<20) or self.portfolio[ticker]['price']<self.portfolio[ticker]['sl']:
+            if row['anti_flag_counter']>7 and row['Angle']<20 and row['Angle_flag']==False :
             #if row["price"] <= row['sl']:
 
                 sell.append(ticker)

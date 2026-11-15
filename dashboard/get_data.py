@@ -178,13 +178,17 @@ def prepare_indicators(data, flag='SMA25'):
             df = data[ticker]
             # buy signal
             df["flag"] = df["Close"] > df[flag]
-            df["Dist25_Change"] = (df["Close"] - df["Close"].shift(1)) / df["Close"].shift(1) * 100
+            df["Change"] = (df["Close"] - df["Close"].shift(1)) / df["Close"].shift(1) * 100
             
             df=flag_counter(df)
             df=anti_flag_counter(df)
             df=add_angle(df)
             
             df=vol_analysis(df)
+            
+            df= get_supp_res_last(df)
+            
+            df['sd_flag']=sd_flag(df)
             
     
             fd[ticker.split('.')[0]] = df
@@ -193,21 +197,41 @@ def prepare_indicators(data, flag='SMA25'):
     return fd
 
 
-def add_angle(df, window=3):
+# def add_angle(df, window=3):
+#     df = df.copy()
+
+#     #pct_change = ((df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1)
+#     pct_change = ((df["SMA25"] / df["SMA25"].shift(window)) ** (1 / window) - 1)
+
+#     df["Angle"] = np.degrees(np.arctan(pct_change * 100))
+    
+#     # df["Angle_flag"] = df['Angle'].rolling(5).mean()
+#     # df["Angle_flag"]=[i>j for i,j in zip(df["Angle"],df["Angle_flag"] )]
+#     df["Angle_flag"] = df['Close'].rolling(5).mean()
+#     df["Angle_flag"]=[i>j for i,j in zip(df["Close"],df["Angle_flag"] )]
+    
+
+#     return df
+
+
+def add_angle(df, lookback=10):
+
     df = df.copy()
 
-    #pct_change = ((df["Close"] / df["Close"].shift(window)) ** (1 / window) - 1)
-    pct_change = ((df["SMA25"] / df["SMA25"].shift(window)) ** (1 / window) - 1)
+    # SMA25 angle using two points
+    slope = (
+        df["SMA25"] - df["SMA25"].shift(lookback)
+    ) / lookback
 
-    df["Angle"] = np.degrees(np.arctan(pct_change * 100))
-    
-    # df["Angle_flag"] = df['Angle'].rolling(5).mean()
-    # df["Angle_flag"]=[i>j for i,j in zip(df["Angle"],df["Angle_flag"] )]
+    # Normalize against current SMA25
+    pct_slope = slope / df["SMA25"] * 100
+
+    df["Angle"] = np.degrees(np.arctan(pct_slope))
     df["Angle_flag"] = df['Close'].rolling(5).mean()
     df["Angle_flag"]=[i>j for i,j in zip(df["Close"],df["Angle_flag"] )]
-    
 
     return df
+
 
 def download_nifty(
                   start_date,end_date=None,
@@ -451,3 +475,299 @@ def vol_analysis(data, window=150):
     data.loc[df.index, 'sd'] = df['sd']
 
     return data
+
+# def get_supp_res(df):
+
+#     resis=[]
+#     supp=[]
+#     for i in range(len(df)):
+#         try:
+#             temp= df.iloc[0:i]
+#             price= temp['Close'].iloc[-1]
+#             #temp= data[ticker]
+#             bin_size= round(price*.02)
+            
+#             temp['Mid']=round((temp['Open']+temp['Close'])/2 )
+#             temp=temp[['Mid', 'Volume']]
+            
+#             temp['Mid_bin'] = (temp['Mid'] // bin_size) * bin_size
+        
+#             temp = (
+#                 temp.groupby('Mid_bin', as_index=False)['Volume']
+#                   .sum()
+#                   .sort_values('Mid_bin', ascending=False)
+#             )
+#             temp.columns=['Mid', 'Volume']
+#             temp=temp.groupby('Mid')['Volume'].sum().reset_index().sort_values('Volume', ascending=False)
+#             temp=temp.iloc[:10]
+#             try:
+#                 resistance=min(temp[temp.Mid>price]['Mid'])
+#             except:
+#                 resistance="NIR"
+#             resis.append(resistance)
+            
+#             try:
+#                 support=max(temp[temp.Mid<price]['Mid'])
+#             except:
+#                 support="NIS"
+#             supp.append(support)
+#         except:
+#             resis.append("NIR")
+#             supp.append("NIS")
+            
+#     df['support']=supp
+#     df['resistance']=resis
+    
+#     return df
+
+# def get_supp_res(df):
+
+#     df = df.copy()
+
+#     close = df['Close'].to_numpy()
+#     mid = ((df['Open'].to_numpy() + close) / 2).round()
+#     volume = df['Volume'].to_numpy()
+
+#     n = len(df)
+
+#     support = np.full(n, np.nan)
+#     resistance = np.full(n, np.nan)
+
+#     last_bin_size = None
+#     vp = None
+
+#     for i in range(1, n):
+
+#         price = close[i - 1]
+#         bin_size = max(round(price * 0.02), 1)
+
+#         # Recalculate only when bin size changes
+#         if bin_size != last_bin_size:
+
+#             bins = (mid[:i] // bin_size) * bin_size
+
+#             vp = (
+#                 pd.Series(volume[:i])
+#                 .groupby(bins)
+#                 .sum()
+#             )
+
+#             last_bin_size = bin_size
+
+#         else:
+#             # Add only the latest candle
+#             current_bin = (mid[i - 1] // bin_size) * bin_size
+
+#             if current_bin in vp.index:
+#                 vp.loc[current_bin] += volume[i - 1]
+#             else:
+#                 vp.loc[current_bin] = volume[i - 1]
+
+#         levels = vp.nlargest(10).index.to_numpy()
+
+#         below = levels[levels < price]
+#         above = levels[levels > price]
+
+#         if len(below):
+#             support[i] = below.max()
+
+#         if len(above):
+#             resistance[i] = above.min()
+
+#     df['support'] = support
+#     df['resistance'] = resistance
+    
+
+#     return df
+def get_supp_res_last(df):
+
+    df = df.copy()
+
+
+    close = df['Close'].to_numpy()
+    mid = ((df['Open'].to_numpy() + close) / 2).round()
+    volume = df['Volume'].to_numpy()
+
+    n = len(df)
+
+    #support = np.full(n, np.nan)
+    #resistance = np.full(n, np.nan)
+
+    last_bin_size = None
+    vp = None
+
+    #for i in range(1, n):
+    i=n-1
+
+    price = close[i - 1]
+    bin_size = max(round(price * 0.02), 1)
+
+    # Recalculate only when bin size changes
+
+    bins = (mid[:i] // bin_size) * bin_size
+
+    vp = (
+        pd.Series(volume[:i])
+        .groupby(bins)
+        .sum()
+    )
+
+    abc=[(i,j) for i,j in zip(vp, vp.index.to_numpy())]
+    bl=[i for i in abc if i[1]<price]
+    bl=sorted(bl, key=lambda x: x[0], reverse=True)[0:5]
+    df.loc[:, 's1']=sorted(bl, key=lambda x: x[1], reverse=True)[0][1] if len(bl) > 0 else np.nan
+    df.loc[:, 's2']=sorted(bl, key=lambda x: x[1], reverse=True)[1][1] if len(bl) > 1 else np.nan
+
+    ab=[i for i in abc if i[1]>=price]
+    ab=sorted(ab, key=lambda x: x[0], reverse=True)[0:5]
+    df.loc[:, 'r1']=sorted(ab, key=lambda x: x[1], reverse=True)[-1][1] if len(ab) > 0 else np.nan
+    df.loc[:, 'r2']=sorted(ab, key=lambda x: x[1], reverse=True)[-2][1] if len(ab) > 1 else np.nan
+    
+
+    return df
+
+def sd_flag(df):
+    temp= df.iloc[-25:]
+    
+    bull=len([(i,j) for i,j in zip(temp.Change, temp.sd) if i>2 and j>5 ])
+    bear=len([(i,j) for i,j in zip(temp.Change, temp.sd) if i<-2 and j>5 ])
+    move=len([(i,j) for i,j in zip(temp.Change, temp.sd) if -1<=i<=-2 and j>5 ])
+    
+    if bull>0 and bear==0:
+        return "Bull-"+str(bull)
+
+    elif bull==0 and bear>0:
+        return "Bear-"+str(bear)
+    
+    elif bull>0 and bear>0:
+        return "Bull&Bear -" +str(bull)+"-"+str(bear)
+
+    elif move>0 and bull==0 and bear==0:
+        return "Movement-"+str(move)
+    
+    else:
+        return ""
+
+def download_nifty_hourly(
+    start_date=None,
+    end_date=None,
+    auto_adjust=True
+):
+
+    # -------------------------------------------------------
+    # Last 60 days by default
+    # -------------------------------------------------------
+
+    if start_date is None:
+        start_date = datetime.now() - timedelta(days=60)
+
+    if end_date is None:
+        end_date = datetime.now()
+
+    try:
+
+        print(
+            f"Downloading NIFTY 1-hour data: "
+            f"{start_date.date()} to {end_date.date()}"
+        )
+
+        df = yf.download(
+            "^NSEI",
+            start=start_date,
+            end=end_date,
+            interval="1h",
+            auto_adjust=auto_adjust,
+            progress=True
+        )
+
+        if df.empty:
+            print("No NIFTY data downloaded.")
+            return pd.DataFrame()
+
+        # ---------------------------------------------------
+        # Flatten MultiIndex if required
+        # ---------------------------------------------------
+
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+
+        # ---------------------------------------------------
+        # Select required columns
+        # ---------------------------------------------------
+
+        df = df[
+            [
+                "Close",
+                "High",
+                "Low",
+                "Open",
+                "Volume"
+            ]
+        ].copy()
+
+        # Remove rows with missing Close
+        df = df[~df["Close"].isnull()]
+
+        # ---------------------------------------------------
+        # Date
+        # ---------------------------------------------------
+
+        df["date"] = df.index
+        df.reset_index(drop=True, inplace=True)
+
+        df["Ticker"] = "nifty"
+
+        # ---------------------------------------------------
+        # Moving averages
+        # ---------------------------------------------------
+
+        close = df["Close"]
+
+        df["SMA25"] = close.rolling(25).mean()
+        df["SMA100"] = close.rolling(100).mean()
+        df["SMA200"] = close.rolling(200).mean()
+
+        # ---------------------------------------------------
+        # Volume MA
+        # ---------------------------------------------------
+
+        df["VOL25"] = df["Volume"].rolling(25).mean()
+
+        # ---------------------------------------------------
+        # Distance from moving averages
+        # ---------------------------------------------------
+
+        df["Dist25"] = (
+            (close - df["SMA25"])
+            / df["SMA25"]
+            * 100
+        )
+
+        df["Dist100"] = (
+            (close - df["SMA100"])
+            / df["SMA100"]
+            * 100
+        )
+
+        df["Dist200"] = (
+            (close - df["SMA200"])
+            / df["SMA200"]
+            * 100
+        )
+
+        # ---------------------------------------------------
+        # Sort
+        # ---------------------------------------------------
+
+        df.sort_values("date", inplace=True)
+        df.reset_index(drop=True, inplace=True)
+
+        print(f"Downloaded {len(df)} hourly candles.")
+
+        return df
+
+    except Exception as e:
+
+        print(f"NIFTY download error: {e}")
+
+        return pd.DataFrame()

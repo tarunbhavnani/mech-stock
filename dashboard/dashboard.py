@@ -66,6 +66,8 @@ def load_market():
     data_hourly = download_data_hourly(TICKERS)
 
     data_hourly = prepare_indicators(data_hourly, flag='SMA100')
+    
+    data= {i:j for i,j in data.items() if i in data_hourly}
 
     return data,data_hourly
 
@@ -104,10 +106,16 @@ total_value = sum(
     portfolio[t]["value"]
     for t in portfolio
 )
+total_value=sum([portfolio[i]['qty']*data[i]['Close'].iloc[-1] for i in  portfolio])
+last_value=sum([portfolio[i]['qty']*data[i]['Close'].iloc[-2] for i in  portfolio])
+
+change=round(total_value-last_value)
+
+market_breadth= str(round(100*len(pm.get_Overall_sell_list())/len(data)))+"%"
 
 n_holdings = len(portfolio)
 
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3, c4,c5,c6 = st.columns(6)
 
 c1.metric(
     "Portfolio Value",
@@ -115,19 +123,30 @@ c1.metric(
 )
 
 c2.metric(
+    "Change",
+    change
+)
+
+c3.metric(
     "Holdings",
     n_holdings
 )
 
-c3.metric(
+c4.metric(
     "Buy Candidates",
     len(buy_list)
 )
 
-c4.metric(
+c5.metric(
     "Sell Candidates",
     len(sell_list)
 )
+
+c6.metric(
+    "Overall -ve breadth",
+    market_breadth
+)
+
 
 st.divider()
 
@@ -181,7 +200,7 @@ with left:
             "Ticker",
             "Close",
             "Dist25",
-            "Dist25_Change",
+            "Change",
             "flag_counter",
             "Angle"
         ]]
